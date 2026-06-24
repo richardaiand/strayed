@@ -605,6 +605,53 @@ function catReaction(tone) {
   return randomChoice(pool);
 }
 
+function freeInputTrustDelta(tone) {
+  const { social, drive } = state.cat;
+  const base = { gentle: 8, playful: 6, impatient: -3, distracted: -1, neutral: 2 };
+  let delta = base[tone] || 2;
+
+  // Social style preferences
+  if (social === "Tsundere") {
+    if (tone === "gentle") delta += 3;
+    if (tone === "playful") delta += 1;
+    if (tone === "impatient") delta -= 2; // scolding backfires
+  }
+  if (social === "Wallflower") {
+    if (tone === "gentle") delta += 3;
+    if (tone === "playful") delta += 1;
+    if (tone === "impatient") delta -= 4;
+  }
+  if (social === "Velcro Cat") {
+    if (tone === "gentle" || tone === "playful") delta += 2;
+    if (tone === "distracted") delta -= 3;
+  }
+  if (social === "Little Gremlin") {
+    if (tone === "playful") delta += 4;
+    if (tone === "gentle") delta += 1;
+    if (tone === "impatient") delta -= 1;
+  }
+
+  // Core drive preferences
+  if (drive === "CEO of the Household") {
+    if (tone === "impatient") delta += 1; // respects directness
+    if (tone === "distracted") delta -= 2;
+  }
+  if (drive === "Bottomless Pit") {
+    if (tone === "gentle") delta += 1;
+    if (tone === "playful") delta += 1;
+  }
+  if (drive === "Tiny Detective") {
+    if (tone === "playful") delta += 2;
+    if (tone === "distracted") delta -= 1;
+  }
+  if (drive === "Professional Napper") {
+    if (tone === "gentle") delta += 2;
+    if (tone === "impatient") delta -= 1;
+  }
+
+  return delta;
+}
+
 function offerFreeInput(prompt, target, onSubmit) {
   state.awaitingInput = true;
   state.freeInputTarget = target;
@@ -622,14 +669,7 @@ function offerFreeInput(prompt, target, onSubmit) {
     clearFreeInput();
     logEvent(`You said: "${text}" — the cat seemed ${tone}.`);
 
-    let trustDelta = 0;
-    if (tone === "gentle") trustDelta = 8;
-    if (tone === "playful") trustDelta = 6;
-    if (tone === "impatient") trustDelta = -3;
-    if (tone === "distracted") trustDelta = -1;
-    if (state.cat.social === "Tsundere" && tone === "gentle") trustDelta += 3;
-    if (state.cat.social === "Wallflower" && tone === "gentle") trustDelta += 2;
-    if (state.cat.social === "Wallflower" && tone === "impatient") trustDelta -= 2;
+    const trustDelta = freeInputTrustDelta(tone);
     adjustTrust(trustDelta);
 
     onSubmit({ text, tone, reaction, trustDelta });
@@ -712,20 +752,21 @@ const SCENES = {
       if (catTag("Bottomless Pit")) {
         options.push({ label: "Open a can of tuna first, then decide", action: () => { adjustTrust(10); state.choices.act1 = "let_in"; logEvent("Act 1: You bribed it with tuna."); goToScene("act1_morning"); } });
       }
-      showChoices(options);
+      showChoices(finalizeOptions(options));
     });
   },
 
   act1_morning() {
     updateCatCard();
-    const reaction = state.choices.act1 === "let_in"
+    const baseReaction = state.choices.act1 === "let_in"
       ? "It slept under the radiator and was gone before sunrise."
       : state.choices.act1 === "water"
         ? "The bowl was empty when I woke. The cat was not."
         : "It let me close the door. Then it sat outside it all night.";
+    const personalityLine = sceneText("act1_morning");
 
     showDialogue([
-      { speaker: "RAY", text: `Morning comes too early. ${reaction}` },
+      { speaker: "RAY", text: `Morning comes too early. ${baseReaction} ${personalityLine}` },
       { speaker: "RAY", text: "The label call goes better than I expected. They want to hear more. They want to see me. I hang up and notice the scratches on my door, the empty windowsill, the silence that is somehow louder than it used to be." },
       { speaker: "RAY", text: "That evening, the cat is back. Same spot. Same look. It is not asking permission." },
       { speaker: "RAY", text: `It is a ${state.cat.breed.name}. ${state.cat.breed.blurb}` },
@@ -755,94 +796,150 @@ const SCENES = {
   },
 
   rehearsal_invasion() {
+    const catLine = sceneText("rehearsal_invasion");
     showDialogue([
       { speaker: "RAY", text: "I'm running a home practice session. My bandmate is on the call, half-listening, half-texting. I find the groove of a new piece — something slower, something that might be good — and then the cat walks across my keyboard." },
-      { speaker: "RAY", text: "The chord it plays does not exist in any theory book. My bandmate loses it. The cat looks pleased, or possibly bored. It is hard to tell." }
+      { speaker: "RAY", text: `The chord it plays does not exist in any theory book. ${catLine}` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Laugh it off and keep the take", action: () => { adjustTrust(10); state.choices.rehearsal = "laugh"; logEvent("Rehearsal: You laughed it off."); goToScene("label_call"); } },
         { label: "Lock the cat out of the room from now on", action: () => { adjustTrust(-6); state.choices.rehearsal = "lock"; logEvent("Rehearsal: You locked the cat out."); goToScene("label_call"); } },
         { label: "Try to compose around the chord", action: () => { adjustTrust(8); state.choices.rehearsal = "compose"; logEvent("Rehearsal: You composed around the cat's chord."); goToScene("label_call"); } }
-      ]);
+      ];
+      if (catTag("Little Gremlin")) {
+        options.push({ label: "Record the chaos and sample it later", action: () => { adjustTrust(12); state.choices.rehearsal = "sample"; logEvent("Rehearsal: You sampled the chaos."); goToScene("label_call"); } });
+      }
+      if (catTag("Professional Napper")) {
+        options.push({ label: "Let it sleep on the sustain pedal", action: () => { adjustTrust(9); state.choices.rehearsal = "pedal"; logEvent("Rehearsal: You let it nap on the pedal."); goToScene("label_call"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
   label_call() {
+    const catLine = sceneText("label_call");
     showDialogue([
       { speaker: "RAY", text: "The A&R rep. The big one. The one who actually signs people. I put on a clean shirt and angle the lamp so the apartment looks like somewhere an adult lives." },
-      { speaker: "RAY", text: "Five minutes in, the cat jumps onto the desk. It sits directly in front of the camera. It stares into the lens with the authority of someone who has reviewed my contract and found it wanting." }
+      { speaker: "RAY", text: `Five minutes in, the cat jumps onto the desk. ${catLine}` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Introduce it to the rep like it belongs there", action: () => { adjustTrust(10); state.choices.labelCall = "introduce"; logEvent("Label call: You introduced the cat."); goToScene("emergency"); } },
         { label: "Move it off the desk gently", action: () => { adjustTrust(3); state.choices.labelCall = "move"; logEvent("Label call: You moved the cat off the desk."); goToScene("emergency"); } },
         { label: "Pretend nothing is happening", action: () => { adjustTrust(-2); state.choices.labelCall = "ignore"; logEvent("Label call: You pretended nothing was happening."); goToScene("emergency"); } }
-      ]);
+      ];
+      if (catTag("CEO of the Household")) {
+        options.push({ label: "Let it take the meeting. You handle the notes.", action: () => { adjustTrust(12); state.choices.labelCall = "delegate"; logEvent("Label call: You let the cat run the meeting."); goToScene("emergency"); } });
+      }
+      if (catTag("Tiny Detective")) {
+        options.push({ label: "Let it sniff the rep. Maybe it knows something.", action: () => { adjustTrust(8); state.choices.labelCall = "sniff"; logEvent("Label call: You let the cat investigate."); goToScene("emergency"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
   emergency() {
+    const catLine = sceneText("emergency");
     showDialogue([
       { speaker: "RAY", text: "3am. The cat is not eating. It is not moving much. Something is wrong in the way wrong things are wrong before you have words for them." },
-      { speaker: "RAY", text: "The all-night vet is forty minutes away. I have a studio session at 8am with a producer flying in from out of town. I cannot reschedule. I cannot do both perfectly." }
+      { speaker: "RAY", text: `${catLine} The all-night vet is forty minutes away. I have a studio session at 8am with a producer flying in from out of town. I cannot reschedule. I cannot do both perfectly.` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Take it to the vet and risk the session", action: () => { adjustTrust(18); state.choices.emergency = "vet"; logEvent("Emergency: You went to the vet."); goToScene("neighbor"); } },
         { label: "Call the vet for advice and go to the session", action: () => { adjustTrust(5); state.choices.emergency = "call"; logEvent("Emergency: You called the vet for advice."); goToScene("neighbor"); } },
         { label: "Go to the session; the cat will probably be fine", action: () => { adjustTrust(-8); state.choices.emergency = "session"; logEvent("Emergency: You went to the session."); goToScene("neighbor"); } }
-      ]);
+      ];
+      if (catTag("Velcro Cat")) {
+        options.push({ label: "Wrap it in your shirt and take it with you", action: () => { adjustTrust(16); state.choices.emergency = "shirt"; logEvent("Emergency: You carried the cat with you."); goToScene("neighbor"); } });
+      }
+      if (catTag("Tsundere")) {
+        options.push({ label: "Pretend you're only going to the vet because you were awake anyway", action: () => { adjustTrust(14); state.choices.emergency = "casual"; logEvent("Emergency: You played it cool."); goToScene("neighbor"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
   neighbor() {
+    const catLine = sceneText("neighbor");
     showDialogue([
       { speaker: "RAY", text: "My downstairs neighbor knocks at 6pm. She looks like she has not slept." },
       { speaker: "NEIGHBOR", text: "\"The cat. It cries at 5am. Every day this week.\"" },
-      { speaker: "RAY", text: "I've been getting home at 2am and sleeping through it. She has not. The cat, audibly, is also not happy. Something has to change." }
+      { speaker: "RAY", text: `I've been getting home at 2am and sleeping through it. She has not. ${catLine} Something has to change.` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Apologize and buy a calming diffuser", action: () => { adjustTrust(6); state.choices.neighbor = "diffuser"; logEvent("Neighbor: You bought a calming diffuser."); goToScene("gig_conflict"); } },
         { label: "Ask her to stop feeding it from her window", action: () => { adjustTrust(-1); state.choices.neighbor = "ask_stop"; logEvent("Neighbor: You asked her to stop feeding it."); goToScene("gig_conflict"); } },
         { label: "Offer to let her help find it a home", action: () => { adjustTrust(-4); state.choices.neighbor = "rehome"; logEvent("Neighbor: You considered rehoming it."); goToScene("gig_conflict"); } }
-      ]);
+      ];
+      if (catTag("Wallflower")) {
+        options.push({ label: "Explain it only cries when it cannot find a hiding spot", action: () => { adjustTrust(8); state.choices.neighbor = "explain"; logEvent("Neighbor: You explained its hiding habit."); goToScene("gig_conflict"); } });
+      }
+      if (catTag("Bottomless Pit")) {
+        options.push({ label: "Promise a bigger midnight feeding so it sleeps in", action: () => { adjustTrust(7); state.choices.neighbor = "midnight"; logEvent("Neighbor: You promised a midnight meal."); goToScene("gig_conflict"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
   gig_conflict() {
+    const catLine = sceneText("gig_conflict");
     showDialogue([
       { speaker: "RAY", text: "A last-minute weekend gig. Good money, good venue, good for my name. Three days away from home." },
-      { speaker: "RAY", text: "The cat has started sleeping at the foot of the bed instead of under it. When I come home, I look for the shape of it before I look for anything else. I am not sure when that started." }
+      { speaker: "RAY", text: `The cat has started sleeping at the foot of the bed instead of under it. ${catLine}` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Take the gig — it's a real step forward", action: () => { adjustTrust(-4); state.choices.gig = "take"; logEvent("Gig conflict: You took the gig."); goToScene("recording_trip"); } },
         { label: "Find a paid sitter and call every night", action: () => { adjustTrust(8); state.choices.gig = "sitter"; logEvent("Gig conflict: You hired a sitter."); goToScene("recording_trip"); } },
         { label: "Ask a bandmate to house-sit", action: () => { adjustTrust(5); state.choices.gig = "bandmate"; logEvent("Gig conflict: A bandmate house-sat."); goToScene("recording_trip"); } }
-      ]);
+      ];
+      if (catTag("Velcro Cat")) {
+        options.push({ label: "Turn down the gig. It would be too quiet without it.", action: () => { adjustTrust(14); state.choices.gig = "decline"; logEvent("Gig conflict: You declined the gig."); goToScene("recording_trip"); } });
+      }
+      if (catTag("CEO of the Household")) {
+        options.push({ label: "Let the sitter follow a strict schedule it seems to prefer", action: () => { adjustTrust(9); state.choices.gig = "schedule"; logEvent("Gig conflict: You left a schedule."); goToScene("recording_trip"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
   recording_trip() {
+    const catLine = sceneText("recording_trip");
     showDialogue([
       { speaker: "RAY", text: "The label wants me in another city for two weeks to record. This is everything I worked for. The cat is not invited." },
-      { speaker: "RAY", text: "Every arrangement I consider feels like a small betrayal of something I didn't know I'd signed up for." }
+      { speaker: "RAY", text: `${catLine} Every arrangement I consider feels like a small betrayal of something I didn't know I'd signed up for.` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Go. This is the contract.", action: () => { adjustTrust(-8); state.choices.recording = "go"; logEvent("Recording trip: You went to the other city."); goToScene("quiet_night"); } },
         { label: "Negotiate a local studio instead", action: () => { adjustTrust(10); state.choices.recording = "local"; logEvent("Recording trip: You negotiated local recording."); goToScene("quiet_night"); } },
         { label: "Bring the cat. Find a pet-friendly rental.", action: () => { adjustTrust(14); state.choices.recording = "bring"; logEvent("Recording trip: You brought the cat."); goToScene("quiet_night"); } }
-      ]);
+      ];
+      if (catTag("Sphynx")) {
+        options.push({ label: "Book the rental. A hairless cat in a cold studio needs you.", action: () => { adjustTrust(16); state.choices.recording = "bring"; logEvent("Recording trip: You brought the Sphynx."); goToScene("quiet_night"); } });
+      }
+      if (catTag("Little Gremlin")) {
+        options.push({ label: "Leave it with three new toys and a camera to check in", action: () => { adjustTrust(11); state.choices.recording = "toys"; logEvent("Recording trip: You left toys and a camera."); goToScene("quiet_night"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
   quiet_night() {
+    const catLine = sceneText("quiet_night");
     showDialogue([
       { speaker: "RAY", text: "For the first time in months, I have a night off. No gig. No call. No deadline." },
-      { speaker: "RAY", text: "The cat is in the room. The city is quiet outside. I could practice. I could rest. I could just sit there." }
+      { speaker: "RAY", text: `${catLine} The city is quiet outside. I could practice. I could rest. I could just sit there.` }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Practice the new piece", action: () => { adjustTrust(5); state.choices.quiet = "practice"; logEvent("Quiet night: You practiced."); goToScene("ending"); } },
         { label: "Rest on the couch", action: () => { adjustTrust(8); state.choices.quiet = "rest"; logEvent("Quiet night: You rested."); goToScene("ending"); } },
         { label: "Sit with the cat and do nothing", action: () => { adjustTrust(12); state.choices.quiet = "sit"; logEvent("Quiet night: You sat with the cat."); goToScene("ending"); } }
-      ]);
+      ];
+      if (catTag("Professional Napper")) {
+        options.push({ label: "Nap on the couch so it can sleep on your chest", action: () => { adjustTrust(14); state.choices.quiet = "nap_together"; logEvent("Quiet night: You napped together."); goToScene("ending"); } });
+      }
+      if (catTag("Tiny Detective")) {
+        options.push({ label: "Play a slow song while it investigates the sheet music", action: () => { adjustTrust(13); state.choices.quiet = "detective"; logEvent("Quiet night: You played while it investigated."); goToScene("ending"); } });
+      }
+      showChoices(finalizeOptions(options));
     });
   },
 
