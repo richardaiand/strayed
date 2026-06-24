@@ -20,15 +20,14 @@
   let currentScene = "start";
   let currentState = { cat: null };
 
-  /* ---------- integer-scale resize so scene stays centered and crisp ---------- */
+  /* ---------- aspect-fit resize so scene fills the stage and stays centered ---------- */
 
   function resizeCanvas() {
     const stage = document.getElementById("scene-stage");
     if (!stage) return;
     const rect = stage.getBoundingClientRect();
-    const scaleX = Math.floor(rect.width / BUFFER_W);
-    const scaleY = Math.floor(rect.height / BUFFER_H);
-    const displayScale = Math.max(1, Math.min(scaleX, scaleY));
+    const scale = Math.min(rect.width / BUFFER_W, rect.height / BUFFER_H, 4);
+    const displayScale = Math.max(1, scale);
     canvas.style.width = `${BUFFER_W * displayScale}px`;
     canvas.style.height = `${BUFFER_H * displayScale}px`;
   }
@@ -76,7 +75,7 @@
     default:      { fur:"#a89888", points:"#7a6a5a", eyes:"#d4a05f", nose:"#d8a0a8", belly:"#b8a898", stripes:null,  p1:null,      p2:null      }
   };
 
-  /* ---------- draw a sitting cat at (ox, oy) ---------- */
+  /* ---------- draw a cute sitting cat at (ox, oy) ---------- */
 
   function drawCat(ox, oy, breedName) {
     const p = PAL[breedName] || PAL.default;
@@ -84,75 +83,86 @@
     const s = p.stripes, o = p.p1, b = p.p2;
     const dk = "#1a1515";
 
-    // Ears
-    rect(ox + 4, oy + 0, 3, 5, pt);
-    rect(ox + 5, oy + 1, 1, 4, f);
-    rect(ox + 13, oy + 0, 3, 5, pt);
-    rect(ox + 14, oy + 1, 1, 4, f);
+    // Ears (rounded triangles)
+    rect(ox + 5, oy + 0, 3, 4, pt);
+    rect(ox + 6, oy + 1, 1, 3, f);
+    rect(ox + 12, oy + 0, 3, 4, pt);
+    rect(ox + 13, oy + 1, 1, 3, f);
 
-    // Head
-    rect(ox + 3, oy + 3, 14, 9, f);
-    rect(ox + 4, oy + 8, 12, 4, pt); // face mask
+    // Head (rounder, with cheeks)
+    rect(ox + 4, oy + 3, 12, 8, f);
+    rect(ox + 3, oy + 5, 14, 5, f);
+    rect(ox + 4, oy + 9, 12, 3, pt); // muzzle/face mask
 
-    // Eyes
-    rect(ox + 5, oy + 5, 3, 3, e);
-    rect(ox + 12, oy + 5, 3, 3, e);
-    rect(ox + 6, oy + 5, 1, 3, dk);
-    rect(ox + 13, oy + 5, 1, 3, dk);
+    // Cheeks
+    px(ox + 3, oy + 7, f);
+    px(ox + 16, oy + 7, f);
+
+    // Eyes (larger, rounder)
+    rect(ox + 6, oy + 5, 3, 4, e);
+    rect(ox + 11, oy + 5, 3, 4, e);
+    rect(ox + 7, oy + 6, 1, 2, dk);
+    rect(ox + 12, oy + 6, 1, 2, dk);
 
     // Nose + mouth
-    rect(ox + 9, oy + 7, 2, 2, n);
-    rect(ox + 9, oy + 9, 2, 1, pt);
+    rect(ox + 9, oy + 8, 2, 1, n);
+    px(ox + 9, oy + 9, pt);
+    px(ox + 10, oy + 9, pt);
 
     // Whiskers
-    rect(ox + 1, oy + 7, 2, 1, "#7a6a5a");
-    rect(ox + 1, oy + 9, 2, 1, "#7a6a5a");
-    rect(ox + 17, oy + 7, 2, 1, "#7a6a5a");
-    rect(ox + 17, oy + 9, 2, 1, "#7a6a5a");
+    rect(ox + 2, oy + 8, 2, 1, "#7a6a5a");
+    rect(ox + 2, oy + 9, 2, 1, "#7a6a5a");
+    rect(ox + 16, oy + 8, 2, 1, "#7a6a5a");
+    rect(ox + 16, oy + 9, 2, 1, "#7a6a5a");
 
-    // Body
-    rect(ox + 4, oy + 11, 12, 8, f);
-    rect(ox + 7, oy + 13, 6, 5, bl); // belly
+    // Body (smaller, rounder, compact)
+    rect(ox + 5, oy + 11, 10, 7, f);
+    rect(ox + 4, oy + 13, 12, 5, f);
+    rect(ox + 7, oy + 13, 6, 4, bl); // belly
 
-    // Stripes (tabby)
+    // Stripes (tabby) — smaller, on back
     if (s) {
-      rect(ox + 5, oy + 12, 3, 1, s);
-      rect(ox + 10, oy + 12, 3, 1, s);
-      rect(ox + 5, oy + 14, 3, 1, s);
-      rect(ox + 10, oy + 14, 3, 1, s);
-      rect(ox + 5, oy + 16, 3, 1, s);
-      rect(ox + 10, oy + 16, 3, 1, s);
+      rect(ox + 6, oy + 12, 2, 1, s);
+      rect(ox + 10, oy + 12, 2, 1, s);
+      rect(ox + 6, oy + 14, 2, 1, s);
+      rect(ox + 10, oy + 14, 2, 1, s);
+      rect(ox + 7, oy + 16, 4, 1, s);
     }
 
     // Calico patches
-    if (o) rect(ox + 4, oy + 12, 4, 4, o);
-    if (b) rect(ox + 11, oy + 13, 5, 5, b);
+    if (o) rect(ox + 4, oy + 12, 3, 3, o);
+    if (b) rect(ox + 11, oy + 13, 4, 4, b);
 
-    // Paws
-    rect(ox + 5, oy + 18, 4, 3, pt);
-    rect(ox + 11, oy + 18, 4, 3, pt);
+    // Paws (smaller, close together)
+    rect(ox + 6, oy + 17, 3, 2, pt);
+    rect(ox + 11, oy + 17, 3, 2, pt);
 
-    // Tail (curled)
-    rect(ox + 16, oy + 13, 2, 6, f);
-    rect(ox + 17, oy + 11, 2, 3, f);
-    rect(ox + 18, oy + 11, 1, 2, pt);
+    // Tail (curled around body)
+    rect(ox + 15, oy + 14, 2, 5, f);
+    rect(ox + 16, oy + 12, 2, 3, f);
+    rect(ox + 17, oy + 11, 1, 2, pt);
   }
 
   /* ---------- cat silhouette (for window scenes) ---------- */
 
   function drawCatSilhouette(ox, oy) {
     const c = "#0a0a14";
-    rect(ox + 4, oy + 0, 3, 5, c);
-    rect(ox + 13, oy + 0, 3, 5, c);
-    rect(ox + 3, oy + 3, 14, 9, c);
-    rect(ox + 4, oy + 11, 12, 8, c);
-    rect(ox + 5, oy + 18, 4, 3, c);
-    rect(ox + 11, oy + 18, 4, 3, c);
-    rect(ox + 16, oy + 13, 2, 6, c);
-    rect(ox + 17, oy + 11, 2, 3, c);
+    rect(ox + 5, oy + 0, 3, 4, c);
+    rect(ox + 12, oy + 0, 3, 4, c);
+    rect(ox + 4, oy + 3, 12, 8, c);
+    rect(ox + 3, oy + 5, 14, 5, c);
+    rect(ox + 4, oy + 9, 12, 3, c);
+    px(ox + 3, oy + 7, c);
+    px(ox + 16, oy + 7, c);
+    rect(ox + 5, oy + 11, 10, 7, c);
+    rect(ox + 4, oy + 13, 12, 5, c);
+    rect(ox + 6, oy + 17, 3, 2, c);
+    rect(ox + 11, oy + 17, 3, 2, c);
+    rect(ox + 15, oy + 14, 2, 5, c);
+    rect(ox + 16, oy + 12, 2, 3, c);
     // glowing eyes
-    rect(ox + 6, oy + 6, 1, 2, "#8abfdf");
-    rect(ox + 13, oy + 6, 1, 2, "#8abfdf");
+    rect(ox + 7, oy + 6, 1, 2, "#8abfdf");
+    rect(ox + 12, oy + 6, 1, 2, "#8abfdf");
   }
 
   /* ---------- reusable scene elements ---------- */
