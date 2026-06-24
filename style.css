@@ -123,6 +123,18 @@ h1 {
   margin-top: 0.4rem;
 }
 
+#pixel-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  background: #0a0a14;
+}
+
 #passage {
   font-size: 1.05rem;
   white-space: pre-wrap;

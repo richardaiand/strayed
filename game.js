@@ -323,6 +323,7 @@ function goToScene(sceneName) {
     hideChoices();
   }
   saveGame();
+  if (window.renderScene) window.renderScene(sceneName, state);
 }
 
 /* ---------------- SCENES ---------------- */
@@ -489,6 +490,8 @@ const SCENES = {
       endingKey = "mutual_captivity";
     }
 
+    state.endingKey = endingKey;
+
     const endings = {
       permanent_resident: {
         title: "Permanent Resident",
@@ -573,6 +576,7 @@ function boot() {
       `You were last in: ${state.scene.replace(/_/g, " ")}.\n` +
       `The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
     );
+    if (window.renderScene) window.renderScene(state.scene, state);
     showChoices([
       { label: "Continue where you left off", action: () => goToScene(state.scene) },
       { label: "Start a new game", action: () => { clearSave(); goToScene("start"); } }

@@ -38,6 +38,7 @@ Progress is auto-saved to `localStorage` after every choice. When a player retur
 - `index.html` — game shell
 - `style.css` — visual style
 - `game.js` — state, scenes, cat generation, trust system, tone analysis
+- `pixelart.js` — cozy 8-bit pixel art scene renderer (canvas, no external assets)
 
 ## License
 
