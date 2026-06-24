@@ -24,6 +24,17 @@ For pure static hosting (GitHub Pages, Netlify, Vercel, etc.), `index.html` is t
 
 Progress is auto-saved to `localStorage` after every choice. When a player returns, they can continue their run or start a new game.
 
+## Music
+
+To add background music, place an MP3 file at `assets/music.mp3`. The game includes a music toggle button (♪ in the top-right corner). Browsers block audio autoplay, so the track starts when the player clicks the toggle.
+
+## Layout
+
+- Full-screen pixel art scene as the background
+- Cat mood sidebar (right side) showing breed, personality, and trust
+- Chat box at the bottom with story text and choices
+- Collapsible memory log
+
 ## How it works
 
 - Each playthrough generates a random cat: one of five breeds, one of four social styles, and one of four core drives.
@@ -39,6 +50,7 @@ Progress is auto-saved to `localStorage` after every choice. When a player retur
 - `style.css` — visual style
 - `game.js` — state, scenes, cat generation, trust system, tone analysis
 - `pixelart.js` — cozy 8-bit pixel art scene renderer (canvas, no external assets)
+- `assets/` — drop your `music.mp3` background track here
 
 ## License
 

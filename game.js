@@ -558,8 +558,27 @@ dom.restart.addEventListener("click", () => {
 
 dom.toggleLog.addEventListener("click", () => {
   dom.log.classList.toggle("hidden");
-  dom.toggleLog.textContent = dom.log.classList.contains("hidden") ? "show memory" : "hide memory";
 });
+
+const bgMusic = document.getElementById("bg-music");
+const musicToggle = document.getElementById("music-toggle");
+let musicPlaying = false;
+
+if (musicToggle && bgMusic) {
+  bgMusic.volume = 0.4;
+  musicToggle.addEventListener("click", () => {
+    if (musicPlaying) {
+      bgMusic.pause();
+      musicToggle.textContent = "♪";
+      musicToggle.classList.remove("playing");
+    } else {
+      bgMusic.play().catch(() => {});
+      musicToggle.textContent = "♫";
+      musicToggle.classList.add("playing");
+    }
+    musicPlaying = !musicPlaying;
+  });
+}
 
 function boot() {
   const saved = loadGame();
