@@ -664,49 +664,61 @@ dom.toggleLog.addEventListener("click", () => {
 const bgMusic = document.getElementById("bg-music");
 const musicToggle = document.getElementById("music-toggle");
 let musicPlaying = false;
-let musicManuallyControlled = false;
+let musicStarted = false;
 
-function startMusic() {
-  if (musicPlaying || !bgMusic) return;
+function setMusicIcon(playing) {
+  if (!musicToggle) return;
+  musicToggle.textContent = playing ? "♫" : "♪";
+  musicToggle.classList.toggle("playing", playing);
+}
+
+function tryPlayMusic() {
+  if (!bgMusic || musicPlaying) return;
   bgMusic.play().then(() => {
     musicPlaying = true;
-    if (musicToggle) {
-      musicToggle.textContent = "♫";
-      musicToggle.classList.add("playing");
-    }
+    musicStarted = true;
+    setMusicIcon(true);
   }).catch(() => {
-    // Autoplay blocked — will retry on first user interaction
+    // Browser blocked autoplay — wait for interaction
   });
+}
+
+function pauseMusic() {
+  if (!bgMusic) return;
+  bgMusic.pause();
+  musicPlaying = false;
+  setMusicIcon(false);
 }
 
 if (musicToggle && bgMusic) {
   bgMusic.volume = 0.35;
-  // Try autoplay immediately
-  startMusic();
-  // Browsers block autoplay until interaction — start on first click/keypress
-  const startOnce = () => {
-    if (!musicManuallyControlled) startMusic();
-    document.removeEventListener("click", startOnce);
-    document.removeEventListener("keydown", startOnce);
-  };
-  document.addEventListener("click", startOnce);
-  document.addEventListener("keydown", startOnce);
 
+  // Try to start as soon as the audio is ready
+  bgMusic.addEventListener("canplaythrough", tryPlayMusic);
+  bgMusic.load();
+
+  // Also try immediately (works if browser allows autoplay)
+  tryPlayMusic();
+
+  // Start on first user interaction anywhere
+  const startOnInteraction = () => {
+    tryPlayMusic();
+    document.removeEventListener("click", startOnInteraction);
+    document.removeEventListener("keydown", startOnInteraction);
+    document.removeEventListener("touchstart", startOnInteraction);
+  };
+  document.addEventListener("click", startOnInteraction);
+  document.addEventListener("keydown", startOnInteraction);
+  document.addEventListener("touchstart", startOnInteraction);
+
+  // Toggle button
   musicToggle.addEventListener("click", (e) => {
     e.stopPropagation();
-    musicManuallyControlled = true;
-    document.removeEventListener("click", startOnce);
-    document.removeEventListener("keydown", startOnce);
     if (musicPlaying) {
-      bgMusic.pause();
-      musicToggle.textContent = "♪";
-      musicToggle.classList.remove("playing");
+      pauseMusic();
     } else {
-      bgMusic.play().catch(() => {});
-      musicToggle.textContent = "♫";
-      musicToggle.classList.add("playing");
+      tryPlayMusic();
     }
-    musicPlaying = !musicPlaying;
   });
 }
 
