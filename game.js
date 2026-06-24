@@ -109,6 +109,9 @@ function loadGame() {
     if (!raw) return null;
     const saved = JSON.parse(raw);
     if (!saved || !saved.scene || saved.scene === "breed_select" || saved.scene === "start") return null;
+    if (!saved.cat || !saved.cat.breed || !saved.cat.breed.name) return null;
+    const validBreeds = BREEDS.map(b => b.name);
+    if (!validBreeds.includes(saved.cat.breed.name)) return null;
     return saved;
   } catch (e) {
     return null;
@@ -186,10 +189,6 @@ function generateCatForBreed(breed) {
   return { breed, personality, social, drive, gender, name: "the cat" };
 }
 
-function generateCat() {
-  return generateCatForBreed(BREEDS[Math.floor(Math.random() * BREEDS.length)]);
-}
-
 function updateCatCard() {
   if (!state.cat) return;
   dom.catInfo.classList.remove("hidden");
@@ -220,7 +219,10 @@ function adjustTrust(delta) {
 
 function startWithBreed(breed) {
   if (dom.canvas) dom.canvas.classList.remove("selectable");
+  window.onBreedHover = null;
   state.cat = generateCatForBreed(breed);
+  // eslint-disable-next-line no-console
+  console.log("[strayed] started with breed:", state.cat.breed.name);
   state.trust = 10;
   state.scene = "act1_intro";
   state.choices = {};
@@ -488,10 +490,15 @@ function offerFreeInput(prompt, target, onSubmit) {
 }
 
 function goToScene(sceneName) {
+  if (sceneName !== "breed_select") {
+    window.onBreedHover = null;
+  }
   state.scene = sceneName;
   if (dom.canvas) {
     dom.canvas.classList.toggle("selectable", sceneName === "breed_select");
   }
+  // eslint-disable-next-line no-console
+  console.log("[strayed] scene:", sceneName, "breed:", state.cat ? state.cat.breed.name : "none");
   if (SCENES[sceneName]) {
     SCENES[sceneName]();
   } else {
@@ -517,10 +524,22 @@ const SCENES = {
 
     setSpeaker("NARRATION");
     const unlockedCount = state.unlockedBreeds.length;
-    const prompt = unlockedCount === 0
+    const basePrompt = unlockedCount === 0
       ? "Five shapes in the apartment. Click one to choose your cat."
       : `Five shapes in the apartment. ${unlockedCount === 5 ? "All" : unlockedCount} remembered. Click one to choose again.`;
-    dom.passage.textContent = prompt;
+    dom.passage.textContent = basePrompt;
+
+    window.onBreedHover = (index, breed) => {
+      if (state.scene !== "breed_select") return;
+      if (index < 0 || !breed) {
+        dom.passage.textContent = basePrompt;
+        return;
+      }
+      const known = state.unlockedBreeds.includes(breed.name);
+      dom.passage.textContent = known
+        ? `${breed.emoji} ${breed.name}\n${breed.blurb}`
+        : "???\nYou don't know this one yet.";
+    };
   },
 
   act1_intro() {

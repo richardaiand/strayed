@@ -29,17 +29,26 @@
     return Math.min(4, Math.max(0, Math.floor((x - 5) / 25)));
   }
 
+  function reportHover() {
+    if (typeof window.onBreedHover === "function") {
+      const breeds = window.BREEDS || [];
+      window.onBreedHover(hoverIndex, hoverIndex >= 0 ? breeds[hoverIndex] : null);
+    }
+  }
+
   canvas.addEventListener("mousemove", (e) => {
     const next = catIndexAt(e.clientX, e.clientY);
     if (next !== hoverIndex) {
       hoverIndex = next;
       canvas.classList.toggle("selectable", hoverIndex >= 0);
+      reportHover();
       render(Date.now());
     }
   });
 
   canvas.addEventListener("mouseleave", () => {
     hoverIndex = -1;
+    reportHover();
     render(Date.now());
   });
 
@@ -101,6 +110,10 @@
   /* ---------- Slugcat-inspired breed-specific cats ---------- */
 
   function drawCat(ox, oy, breedName) {
+    if (!PAL[breedName]) {
+      // eslint-disable-next-line no-console
+      console.warn("[strayed] missing palette for breed:", breedName);
+    }
     const p = PAL[breedName] || PAL.default;
     const f = p.fur, pt = p.points, e = p.eyes, n = p.nose, bl = p.belly;
     const s = p.stripes, o = p.p1, b = p.p2;
@@ -463,10 +476,22 @@
     const positions = [5, 30, 55, 80, 105];
     breeds.forEach((breed, i) => {
       const x = positions[i];
-      if (unlocked.has(breed.name)) {
+      const isUnlocked = unlocked.has(breed.name);
+      if (isUnlocked) {
         drawCat(x, 38, breed.name);
       } else {
         drawCatSilhouette(x, 38, breed.name);
+      }
+
+      // Name label only for unlocked cats
+      if (isUnlocked) {
+        ctx.save();
+        ctx.scale(1 / SCALE, 1 / SCALE);
+        ctx.fillStyle = "#d4c4b0";
+        ctx.font = "10px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(breed.name, (x + 9) * SCALE, 73 * SCALE);
+        ctx.restore();
       }
 
       // Hover highlight
@@ -653,6 +678,9 @@
   window.renderScene = function (sceneName, state) {
     currentScene = sceneName;
     currentState = state || { cat: null };
+    const breed = currentState.cat && currentState.cat.breed ? currentState.cat.breed.name : "none";
+    // eslint-disable-next-line no-console
+    console.log("[strayed] render scene:", sceneName, "breed:", breed);
     render(Date.now());
   };
 
