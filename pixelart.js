@@ -10,13 +10,32 @@
 
   const W = 128, H = 80;
   const SCALE = 3;
-  canvas.width = W * SCALE;
-  canvas.height = H * SCALE;
+  const BUFFER_W = W * SCALE;
+  const BUFFER_H = H * SCALE;
+  canvas.width = BUFFER_W;
+  canvas.height = BUFFER_H;
   ctx.scale(SCALE, SCALE);
   ctx.imageSmoothingEnabled = false;
 
   let currentScene = "start";
   let currentState = { cat: null };
+
+  /* ---------- integer-scale resize so scene stays centered and crisp ---------- */
+
+  function resizeCanvas() {
+    const stage = document.getElementById("scene-stage");
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const scaleX = Math.floor(rect.width / BUFFER_W);
+    const scaleY = Math.floor(rect.height / BUFFER_H);
+    const displayScale = Math.max(1, Math.min(scaleX, scaleY));
+    canvas.style.width = `${BUFFER_W * displayScale}px`;
+    canvas.style.height = `${BUFFER_H * displayScale}px`;
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  window.addEventListener("orientationchange", () => setTimeout(resizeCanvas, 150));
+  resizeCanvas();
 
   /* ---------- drawing primitives ---------- */
 

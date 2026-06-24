@@ -106,7 +106,7 @@ const dom = {
   namePlate: document.getElementById("name-plate"),
   advanceIndicator: document.getElementById("advance-indicator"),
   catInfo: document.getElementById("cat-info"),
-  catEmoji: document.getElementById("cat-emoji"),
+  catMood: document.getElementById("cat-mood"),
   catName: document.getElementById("cat-name"),
   catBreed: document.getElementById("cat-breed"),
   catPersonality: document.getElementById("cat-personality"),
@@ -153,10 +153,9 @@ function generateCat() {
 function updateCatCard() {
   if (!state.cat) return;
   dom.catInfo.classList.remove("hidden");
-  dom.catEmoji.textContent = state.cat.personality.emoji || state.cat.breed.emoji;
   dom.catName.textContent = state.cat.name === "the cat" ? "the cat" : state.cat.name;
   dom.catBreed.textContent = `${state.cat.breed.name} · ${state.cat.gender}`;
-  dom.catPersonality.textContent = `${state.cat.personality.name} (${state.cat.social} + ${state.cat.drive})`;
+  dom.catPersonality.textContent = `${state.cat.personality.name}`;
   updateTrustBar();
 }
 
@@ -164,12 +163,14 @@ function updateTrustBar() {
   const pct = Math.max(0, Math.min(100, state.trust));
   dom.trustFill.style.width = `${pct}%`;
   let label = "uncertain";
-  if (pct < 20) label = "wary";
-  else if (pct < 40) label = "curious";
-  else if (pct < 60) label = "settling in";
-  else if (pct < 80) label = "attached";
-  else label = "yours";
-  dom.trustLabel.textContent = `trust: ${label}`;
+  let mood = "🐈";
+  if (pct < 20) { label = "wary"; mood = "😾"; }
+  else if (pct < 40) { label = "curious"; mood = "🐈"; }
+  else if (pct < 60) { label = "settling in"; mood = "😺"; }
+  else if (pct < 80) { label = "attached"; mood = "😻"; }
+  else { label = "yours"; mood = "💛"; }
+  if (dom.catMood) dom.catMood.textContent = mood;
+  dom.trustLabel.textContent = `mood: ${label}`;
 }
 
 function adjustTrust(delta) {
