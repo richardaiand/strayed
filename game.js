@@ -60,15 +60,39 @@ const SOCIAL_STYLES = ["Wallflower", "Tsundere", "Velcro Cat", "Little Gremlin"]
 const CORE_DRIVES = ["Bottomless Pit", "Professional Napper", "Tiny Detective", "CEO of the Household"];
 
 const SAVE_KEY = "strayed_save_v1";
+const UNLOCKS_KEY = "strayed_unlocks_v1";
+
+function loadUnlocks() {
+  try {
+    const raw = localStorage.getItem(UNLOCKS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveUnlock(breedName) {
+  try {
+    const unlocked = new Set(loadUnlocks());
+    unlocked.add(breedName);
+    localStorage.setItem(UNLOCKS_KEY, JSON.stringify(Array.from(unlocked)));
+    state.unlockedBreeds = Array.from(unlocked);
+  } catch (e) {
+    // ignore
+  }
+}
 
 const state = {
   cat: null,
   trust: 10,
-  scene: "start",
+  scene: "breed_select",
   choices: {},
   log: [],
   awaitingInput: false,
-  freeInputTarget: null
+  freeInputTarget: null,
+  unlockedBreeds: loadUnlocks()
 };
 
 function saveGame() {
@@ -84,7 +108,7 @@ function loadGame() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const saved = JSON.parse(raw);
-    if (!saved || !saved.scene || saved.scene === "start") return null;
+    if (!saved || !saved.scene || saved.scene === "breed_select" || saved.scene === "start") return null;
     return saved;
   } catch (e) {
     return null;
@@ -119,8 +143,21 @@ const dom = {
   log: document.getElementById("log"),
   logList: document.getElementById("log-list"),
   restart: document.getElementById("restart"),
-  toggleLog: document.getElementById("toggle-log")
+  toggleLog: document.getElementById("toggle-log"),
+  canvas: document.getElementById("pixel-canvas")
 };
+
+/* Click on a silhouetted cat in the breed-select gallery */
+if (dom.canvas) {
+  dom.canvas.addEventListener("click", (e) => {
+    if (state.scene !== "breed_select") return;
+    const rect = dom.canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width * 128;
+    if (x < 5 || x > 123) return;
+    const index = Math.min(4, Math.max(0, Math.floor((x - 5) / 25)));
+    startWithBreed(BREEDS[index]);
+  });
+}
 
 function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -134,12 +171,11 @@ function seededRandom(seed) {
   };
 }
 
-function generateCat() {
+function generateCatForBreed(breed) {
   const seed = Date.now() + Math.floor(Math.random() * 10000);
   const rng = seededRandom(seed);
   const social = SOCIAL_STYLES[Math.floor(rng() * SOCIAL_STYLES.length)];
   const drive = CORE_DRIVES[Math.floor(rng() * CORE_DRIVES.length)];
-  const breed = BREEDS[Math.floor(rng() * BREEDS.length)];
   const key = `${social}+${drive}`;
   const personality = PERSONALITIES[key] || {
     name: "The Unclassifiable",
@@ -148,6 +184,10 @@ function generateCat() {
   };
   const gender = breed.name === "Calico" ? "female" : (rng() > 0.5 ? "male" : "female");
   return { breed, personality, social, drive, gender, name: "the cat" };
+}
+
+function generateCat() {
+  return generateCatForBreed(BREEDS[Math.floor(Math.random() * BREEDS.length)]);
 }
 
 function updateCatCard() {
@@ -176,6 +216,40 @@ function updateTrustBar() {
 function adjustTrust(delta) {
   state.trust = Math.max(0, Math.min(100, state.trust + delta));
   updateTrustBar();
+}
+
+function startWithBreed(breed) {
+  if (dom.canvas) dom.canvas.classList.remove("selectable");
+  state.cat = generateCatForBreed(breed);
+  state.trust = 10;
+  state.scene = "act1_intro";
+  state.choices = {};
+  state.log = [];
+  dom.logList.innerHTML = "";
+  dom.restart.classList.add("hidden");
+  dom.toggleLog.classList.add("hidden");
+  dom.log.classList.add("hidden");
+  updateCatCard();
+  goToScene("act1_intro");
+}
+
+function returnToBreedSelect() {
+  if (dom.canvas) dom.canvas.classList.add("selectable");
+  state.cat = null;
+  state.trust = 10;
+  state.scene = "breed_select";
+  state.choices = {};
+  state.log = [];
+  state.endingKey = null;
+  state.awaitingInput = false;
+  state.freeInputTarget = null;
+  dom.logList.innerHTML = "";
+  dom.catInfo.classList.add("hidden");
+  dom.restart.classList.add("hidden");
+  dom.toggleLog.classList.add("hidden");
+  dom.log.classList.add("hidden");
+  clearSave();
+  goToScene("breed_select");
 }
 
 function logEvent(text) {
@@ -415,6 +489,9 @@ function offerFreeInput(prompt, target, onSubmit) {
 
 function goToScene(sceneName) {
   state.scene = sceneName;
+  if (dom.canvas) {
+    dom.canvas.classList.toggle("selectable", sceneName === "breed_select");
+  }
   if (SCENES[sceneName]) {
     SCENES[sceneName]();
   } else {
@@ -428,17 +505,26 @@ function goToScene(sceneName) {
 /* ---------------- SCENES ---------------- */
 
 const SCENES = {
-  start() {
-    state.cat = generateCat();
-    state.trust = 10;
-    state.choices = {};
-    state.log = [];
+  breed_select() {
     dom.logList.innerHTML = "";
     dom.restart.classList.add("hidden");
     dom.toggleLog.classList.add("hidden");
     dom.log.classList.add("hidden");
     dom.catInfo.classList.add("hidden");
+    hideAdvanceIndicator();
+    if (dom.canvas) dom.canvas.classList.add("selectable");
 
+    setSpeaker("NARRATION");
+    dom.passage.textContent = "Five shapes in the apartment. One of them is going to rearrange your life.";
+
+    const buttons = BREEDS.map((breed) => ({
+      label: state.unlockedBreeds.includes(breed.name) ? `${breed.emoji} ${breed.name}` : `◼ ${breed.name}`,
+      action: () => startWithBreed(breed)
+    }));
+    showChoices(buttons);
+  },
+
+  act1_intro() {
     showDialogue([
       { speaker: "RAY", text: "The gig is over. The club has emptied out, and the alley behind it smells like rain that never came. My fingers are still warm from the keys. My shoulders are not." },
       { speaker: "RAY", text: "There's something sitting beside my instrument case. A cat. Motionless. Watching me with the calm of something that has already made a decision." },
@@ -468,11 +554,17 @@ const SCENES = {
       { speaker: "RAY", text: `And it is ${state.cat.personality.name.toLowerCase()}. ${state.cat.personality.description}` }
     ], () => {
       offerFreeInput(
-        "It is looking at you. Say something to the cat.",
-        "act1_greeting",
-        () => {
+        "You should call it something. What do you name the cat?",
+        "act1_name",
+        ({ text, tone }) => {
+          const name = text.trim() || state.cat.breed.name;
+          state.cat.name = name;
+          updateCatCard();
+          logEvent(`You named the cat ${name}.`);
+
+          const toneNote = tone === "gentle" ? " softly." : tone === "impatient" ? " with more edge than intended." : ".";
           showDialogue([
-            { speaker: "RAY", text: "I said what I said. The cat heard it. Whether that means anything is still up for debate." },
+            { speaker: "RAY", text: `${name}. I say it out loud${toneNote} The cat does not respond, but it does not leave either.` },
             { speaker: "RAY", text: "I go to bed with the door open a few inches more than last night." }
           ], () => {
             showChoices([
@@ -665,8 +757,12 @@ const SCENES = {
       { speaker: "—", text: `Final trust · ${trust}/100 (${trustLabel})\n${cat.breed.name} · ${cat.personality.name}` }
     ], () => {
       logEvent(`Ending: ${end.title} (trust ${trust})`);
+      saveUnlock(cat.breed.name);
       dom.restart.classList.remove("hidden");
       dom.toggleLog.classList.remove("hidden");
+      // Restart from an ending always returns to the breed-select gallery.
+      state.scene = "breed_select";
+      saveGame();
     });
   }
 };
@@ -674,8 +770,12 @@ const SCENES = {
 /* ---------------- INIT ---------------- */
 
 dom.restart.addEventListener("click", () => {
-  clearSave();
-  goToScene("start");
+  if (state.scene === "breed_select") {
+    returnToBreedSelect();
+  } else {
+    clearSave();
+    goToScene("breed_select");
+  }
 });
 
 dom.toggleLog.addEventListener("click", () => {
@@ -747,7 +847,8 @@ function boot() {
   const saved = loadGame();
   if (saved) {
     Object.assign(state, saved);
-    const revealed = state.scene !== "start";
+    state.unlockedBreeds = loadUnlocks();
+    const revealed = state.cat && state.cat.breed;
     if (revealed) updateCatCard(); else dom.catInfo.classList.add("hidden");
     saved.log.forEach(entry => {
       const li = document.createElement("li");
@@ -761,18 +862,18 @@ function boot() {
         showDialogue([
           { speaker: "RAY", text: revealed
             ? `I was last in: ${state.scene.replace(/_/g, " ")}. The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
-            : "I was in the alley. The cat was still just a shape in the dark." }
+            : "I was in the apartment. Five shapes in the dark." }
         ], () => {
           showChoices([
             { label: "Continue where you left off", action: () => goToScene(state.scene) },
-            { label: "Start a new game", action: () => { clearSave(); goToScene("start"); } }
+            { label: "Choose a different cat", action: () => { clearSave(); goToScene("breed_select"); } }
           ]);
         });
       }
     );
     if (window.renderScene) window.renderScene(state.scene, state);
   } else {
-    goToScene("start");
+    goToScene("breed_select");
   }
 }
 

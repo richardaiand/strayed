@@ -83,22 +83,21 @@
     const s = p.stripes, o = p.p1, b = p.p2;
     const dk = "#1a1515";
 
-    // Ears (rounded triangles)
-    rect(ox + 5, oy + 0, 3, 4, pt);
-    rect(ox + 6, oy + 1, 1, 3, f);
-    rect(ox + 12, oy + 0, 3, 4, pt);
-    rect(ox + 13, oy + 1, 1, 3, f);
+    // Ears (rounded, wider set)
+    rect(ox + 4, oy + 0, 3, 4, pt);
+    rect(ox + 5, oy + 1, 1, 3, f);
+    rect(ox + 13, oy + 0, 3, 4, pt);
+    rect(ox + 14, oy + 1, 1, 3, f);
 
-    // Head (rounder, with cheeks)
-    rect(ox + 4, oy + 3, 12, 8, f);
-    rect(ox + 3, oy + 5, 14, 5, f);
-    rect(ox + 4, oy + 9, 12, 3, pt); // muzzle/face mask
+    // Head (wide round face, soft cheeks)
+    rect(ox + 4, oy + 3, 12, 6, f);
+    rect(ox + 3, oy + 4, 14, 5, f);
+    rect(ox + 2, oy + 6, 16, 4, f);
+    rect(ox + 4, oy + 9, 12, 2, pt); // muzzle mask
+    px(ox + 3, oy + 8, f);
+    px(ox + 16, oy + 8, f);
 
-    // Cheeks
-    px(ox + 3, oy + 7, f);
-    px(ox + 16, oy + 7, f);
-
-    // Eyes (larger, rounder)
+    // Eyes (large, low)
     rect(ox + 6, oy + 5, 3, 4, e);
     rect(ox + 11, oy + 5, 3, 4, e);
     rect(ox + 7, oy + 6, 1, 2, dk);
@@ -110,30 +109,34 @@
     px(ox + 10, oy + 9, pt);
 
     // Whiskers
-    rect(ox + 2, oy + 8, 2, 1, "#7a6a5a");
-    rect(ox + 2, oy + 9, 2, 1, "#7a6a5a");
-    rect(ox + 16, oy + 8, 2, 1, "#7a6a5a");
-    rect(ox + 16, oy + 9, 2, 1, "#7a6a5a");
+    rect(ox + 1, oy + 8, 2, 1, "#7a6a5a");
+    rect(ox + 1, oy + 9, 2, 1, "#7a6a5a");
+    rect(ox + 17, oy + 8, 2, 1, "#7a6a5a");
+    rect(ox + 17, oy + 9, 2, 1, "#7a6a5a");
 
-    // Body (smaller, rounder, compact)
-    rect(ox + 5, oy + 11, 10, 7, f);
-    rect(ox + 4, oy + 13, 12, 5, f);
-    rect(ox + 7, oy + 13, 6, 4, bl); // belly
+    // Neck (small visible connector)
+    rect(ox + 7, oy + 10, 6, 2, f);
 
-    // Stripes (tabby) — smaller, on back
+    // Body (tapered oval, not a rectangle)
+    rect(ox + 5, oy + 11, 10, 3, f);   // narrow shoulders
+    rect(ox + 4, oy + 13, 12, 4, f);   // widest midsection
+    rect(ox + 5, oy + 17, 10, 2, f);   // taper to hips
+    rect(ox + 7, oy + 13, 6, 4, bl);   // rounded belly
+
+    // Stripes (tabby) — curved on back
     if (s) {
       rect(ox + 6, oy + 12, 2, 1, s);
       rect(ox + 10, oy + 12, 2, 1, s);
-      rect(ox + 6, oy + 14, 2, 1, s);
-      rect(ox + 10, oy + 14, 2, 1, s);
-      rect(ox + 7, oy + 16, 4, 1, s);
+      rect(ox + 5, oy + 14, 3, 1, s);
+      rect(ox + 10, oy + 14, 3, 1, s);
+      rect(ox + 7, oy + 16, 6, 1, s);
     }
 
     // Calico patches
     if (o) rect(ox + 4, oy + 12, 3, 3, o);
     if (b) rect(ox + 11, oy + 13, 4, 4, b);
 
-    // Paws (smaller, close together)
+    // Paws (rounded, close together)
     rect(ox + 6, oy + 17, 3, 2, pt);
     rect(ox + 11, oy + 17, 3, 2, pt);
 
@@ -147,15 +150,18 @@
 
   function drawCatSilhouette(ox, oy) {
     const c = "#0a0a14";
-    rect(ox + 5, oy + 0, 3, 4, c);
-    rect(ox + 12, oy + 0, 3, 4, c);
-    rect(ox + 4, oy + 3, 12, 8, c);
-    rect(ox + 3, oy + 5, 14, 5, c);
-    rect(ox + 4, oy + 9, 12, 3, c);
-    px(ox + 3, oy + 7, c);
-    px(ox + 16, oy + 7, c);
-    rect(ox + 5, oy + 11, 10, 7, c);
-    rect(ox + 4, oy + 13, 12, 5, c);
+    rect(ox + 4, oy + 0, 3, 4, c);
+    rect(ox + 13, oy + 0, 3, 4, c);
+    rect(ox + 4, oy + 3, 12, 6, c);
+    rect(ox + 3, oy + 4, 14, 5, c);
+    rect(ox + 2, oy + 6, 16, 4, c);
+    rect(ox + 4, oy + 9, 12, 2, c);
+    px(ox + 3, oy + 8, c);
+    px(ox + 16, oy + 8, c);
+    rect(ox + 7, oy + 10, 6, 2, c);
+    rect(ox + 5, oy + 11, 10, 3, c);
+    rect(ox + 4, oy + 13, 12, 4, c);
+    rect(ox + 5, oy + 17, 10, 2, c);
     rect(ox + 6, oy + 17, 3, 2, c);
     rect(ox + 11, oy + 17, 3, 2, c);
     rect(ox + 15, oy + 14, 2, 5, c);
@@ -279,7 +285,7 @@
       rect(8, 18, 24, 38, "#3a2a20");
       rect(10, 20, 20, 34, "#2a1c14");
       rect(28, 36, 2, 2, "#d4a05f");
-    } else {
+    } else if (opts.window !== false) {
       drawWindow(8, 6, 36, 28, "#4a3a4e", t);
     }
 
@@ -318,7 +324,36 @@
 
     // Cat
     const catX = opts.door ? 45 : 55;
-    drawCat(catX, 36, currentState.cat ? currentState.cat.breed.name : "default");
+    if (opts.cat !== false) {
+      drawCat(catX, 36, currentState.cat ? currentState.cat.breed.name : "default");
+    }
+  }
+
+  function sceneBreedSelect(t) {
+    // Apartment at night, empty of the player cat
+    sceneApartment(t, { cat: false, window: false });
+
+    // Draw a row of five cats sitting on the floor
+    const breeds = window.BREEDS || [];
+    const unlocked = new Set((currentState.unlockedBreeds || []));
+    const positions = [5, 30, 55, 80, 105];
+    breeds.forEach((breed, i) => {
+      const x = positions[i];
+      if (unlocked.has(breed.name)) {
+        drawCat(x, 38, breed.name);
+      } else {
+        drawCatSilhouette(x, 38);
+      }
+    });
+
+    // Subtle pointer on the center cat
+    const pulse = 0.5 + 0.5 * Math.sin(t / 500);
+    ctx.globalAlpha = 0.4 + 0.3 * pulse;
+    px(64, 34, "#d4a05f");
+    px(64, 35, "#d4a05f");
+    px(63, 35, "#d4a05f");
+    px(65, 35, "#d4a05f");
+    ctx.globalAlpha = 1;
   }
 
   function scenePiano(t) {
@@ -341,6 +376,41 @@
 
     // Cat on keys
     drawCat(50, 8, currentState.cat ? currentState.cat.breed.name : "default");
+  }
+
+  function sceneStudio(t) {
+    // Soundproofed studio walls
+    rect(0, 0, W, H, "#1e1a28");
+    for (let x = 0; x < W; x += 12) {
+      rect(x, 0, 6, H, "#1a1622");
+      rect(x + 6, 0, 1, H, "#14101c");
+    }
+
+    // Mixing desk
+    rect(0, 48, W, 4, "#2a2028");
+    rect(0, 52, W, 28, "#241a22");
+    for (let x = 8; x < W - 8; x += 16) {
+      rect(x, 54, 4, 10, "#3a3040");
+      rect(x + 1, 56, 2, 2, "#d4a05f");
+    }
+
+    // Booth window
+    rect(70, 10, 50, 34, "#1a1a2e");
+    rect(72, 12, 46, 30, "#252538");
+    rect(70, 10, 50, 2, "#3a3448");
+    rect(70, 42, 50, 2, "#3a3448");
+    rect(70, 10, 2, 34, "#3a3448");
+    rect(118, 10, 2, 34, "#3a3448");
+    // Mic stand silhouette in booth
+    rect(90, 24, 1, 18, "#0f0f18");
+    rect(85, 20, 12, 5, "#0f0f18");
+    glow(91, 22, 5, "#8a6a9a", 0.15);
+
+    // Warm desk lamp
+    drawLampGlow(25, 42, t);
+
+    // Cat on the mixing desk
+    drawCat(50, 30, currentState.cat ? currentState.cat.breed.name : "default");
   }
 
   function sceneDesk(t) {
@@ -425,7 +495,8 @@
   /* ---------- scene map ---------- */
 
   const SCENE_MAP = {
-    start: function (t) { sceneAlley(t, true); },
+    breed_select: sceneBreedSelect,
+    act1_intro: function (t) { sceneAlley(t, true); },
     act1_morning: function (t) { sceneApartment(t, {}); },
     rehearsal_invasion: scenePiano,
     label_call: sceneDesk,
