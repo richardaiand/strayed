@@ -338,7 +338,7 @@ const SCENES = {
     dom.restart.classList.add("hidden");
     dom.toggleLog.classList.add("hidden");
     dom.log.classList.add("hidden");
-    updateCatCard();
+    dom.catInfo.classList.add("hidden");
 
     showPassage(
       "The gig is over. The club has emptied out, and the alley behind it smells like rain that never came. " +
@@ -584,7 +584,8 @@ function boot() {
   const saved = loadGame();
   if (saved) {
     Object.assign(state, saved);
-    updateCatCard();
+    const revealed = state.scene !== "start";
+    if (revealed) updateCatCard(); else dom.catInfo.classList.add("hidden");
     saved.log.forEach(entry => {
       const li = document.createElement("li");
       li.textContent = entry;
@@ -592,8 +593,10 @@ function boot() {
     });
     showPassage(
       "Welcome back.\n\n" +
-      `You were last in: ${state.scene.replace(/_/g, " ")}.\n` +
-      `The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
+      (revealed
+        ? `You were last in: ${state.scene.replace(/_/g, " ")}.\n` +
+          `The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
+        : "You were in the alley. The cat was still just a shape in the dark.")
     );
     if (window.renderScene) window.renderScene(state.scene, state);
     showChoices([

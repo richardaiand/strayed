@@ -195,7 +195,7 @@
 
   /* ---------- scenes ---------- */
 
-  function sceneAlley(t) {
+  function sceneAlley(t, silhouette) {
     // Sky gradient
     rect(0, 0, W, 15, "#0a0a1e");
     dither(0, 15, W, 5, "#0a0a1e", "#0e0e26");
@@ -226,8 +226,12 @@
     rect(48, 67, 28, 1, "#2a1c14");
     rect(60, 64, 2, 8, "#2a1c14");
 
-    // Cat
-    drawCat(56, 50, currentState.cat ? currentState.cat.breed.name : "default");
+    // Cat — silhouette or full color
+    if (silhouette) {
+      drawCatSilhouette(56, 50);
+    } else {
+      drawCat(56, 50, currentState.cat ? currentState.cat.breed.name : "default");
+    }
   }
 
   function sceneApartment(t, opts) {
@@ -371,7 +375,7 @@
       glow(64, 40, 50, "#d4a05f", 0.08);
       glow(64, 40, 30, "#e4b86a", 0.05);
     } else if (key === "free_spirit") {
-      sceneAlley(t);
+      sceneAlley(t, true);
     } else if (key === "album_dedication") {
       sceneDesk(t);
       ctx.globalAlpha = 0.12;
@@ -387,7 +391,7 @@
   /* ---------- scene map ---------- */
 
   const SCENE_MAP = {
-    start: sceneAlley,
+    start: function (t) { sceneAlley(t, true); },
     act1_morning: function (t) { sceneApartment(t, {}); },
     rehearsal_invasion: scenePiano,
     label_call: sceneDesk,
