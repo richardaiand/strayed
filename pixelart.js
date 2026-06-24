@@ -9,6 +9,11 @@
   ctx.imageSmoothingEnabled = false;
 
   const W = 128, H = 80;
+  const SCALE = 3;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
+  ctx.scale(SCALE, SCALE);
+  ctx.imageSmoothingEnabled = false;
 
   let currentScene = "start";
   let currentState = { cat: null };
