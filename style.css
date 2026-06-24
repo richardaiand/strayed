@@ -206,6 +206,52 @@ body {
     linear-gradient(to bottom, rgba(10, 8, 15, 0.25) 0%, transparent 20%, transparent 75%, rgba(10, 8, 15, 0.55) 100%);
 }
 
+#breed-overlay {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#breed-overlay.active {
+  pointer-events: auto;
+}
+
+.breed-slot {
+  position: absolute;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.breed-slot:hover,
+.breed-slot:focus-visible {
+  border-color: rgba(212, 160, 95, 0.7);
+  background: rgba(212, 160, 95, 0.08);
+  box-shadow: 0 0 18px rgba(212, 160, 95, 0.25);
+  outline: none;
+}
+
+.breed-slot .slot-label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.breed-slot:hover .slot-label,
+.breed-slot:focus-visible .slot-label {
+  opacity: 1;
+}
+
 /* ---------- Dialogue box (bottom) ---------- */
 
 #chat-box {

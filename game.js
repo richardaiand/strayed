@@ -299,20 +299,9 @@ const dom = {
   logList: document.getElementById("log-list"),
   restart: document.getElementById("restart"),
   toggleLog: document.getElementById("toggle-log"),
-  canvas: document.getElementById("pixel-canvas")
+  canvas: document.getElementById("pixel-canvas"),
+  breedOverlay: document.getElementById("breed-overlay")
 };
-
-/* Click on a silhouetted cat in the breed-select gallery */
-if (dom.canvas) {
-  dom.canvas.addEventListener("click", (e) => {
-    if (state.scene !== "breed_select") return;
-    const rect = dom.canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width * 128;
-    if (x < 5 || x > 123) return;
-    const index = Math.min(4, Math.max(0, Math.floor((x - 5) / 25)));
-    startWithBreed(BREEDS[index]);
-  });
-}
 
 function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -370,7 +359,11 @@ function adjustTrust(delta) {
 }
 
 function startWithBreed(breed) {
-  if (dom.canvas) dom.canvas.classList.remove("selectable");
+  if (dom.breedOverlay) {
+    dom.breedOverlay.classList.add("hidden");
+    dom.breedOverlay.classList.remove("active");
+    dom.breedOverlay.innerHTML = "";
+  }
   window.onBreedHover = null;
   state.cat = generateCatForBreed(breed);
   // eslint-disable-next-line no-console
@@ -712,26 +705,56 @@ const SCENES = {
     dom.catInfo.classList.add("hidden");
     dom.choices.innerHTML = "";
     hideAdvanceIndicator();
-    if (dom.canvas) dom.canvas.classList.add("selectable");
 
     setSpeaker("NARRATION");
-    const unlockedCount = state.unlockedBreeds.length;
+    const unlocked = new Set(state.unlockedBreeds);
+    const unlockedCount = unlocked.size;
     const basePrompt = unlockedCount === 0
       ? "Five shapes in the apartment. Click one to choose your cat."
       : `Five shapes in the apartment. ${unlockedCount === 5 ? "All" : unlockedCount} remembered. Click one to choose again.`;
     dom.passage.textContent = basePrompt;
 
-    window.onBreedHover = (index, breed) => {
-      if (state.scene !== "breed_select") return;
-      if (index < 0 || !breed) {
-        dom.passage.textContent = basePrompt;
-        return;
-      }
-      const known = state.unlockedBreeds.includes(breed.name);
-      dom.passage.textContent = known
-        ? `${breed.emoji} ${breed.name}\n${breed.blurb}`
-        : "???\nYou don't know this one yet.";
-    };
+    if (dom.breedOverlay) {
+      dom.breedOverlay.innerHTML = "";
+      dom.breedOverlay.classList.remove("hidden");
+      dom.breedOverlay.classList.add("active");
+
+      // Cat sprite positions in the 128x80 scene
+      const positions = [5, 30, 55, 80, 105];
+      const slotW = 25 / 128 * 100;
+      const slotH = 22 / 80 * 100;
+      const top = 38 / 80 * 100;
+
+      BREEDS.forEach((breed, i) => {
+        const x = positions[i];
+        const isUnlocked = unlocked.has(breed.name);
+
+        const btn = document.createElement("button");
+        btn.className = "breed-slot";
+        btn.style.left = `${(x / 128) * 100}%`;
+        btn.style.top = `${top}%`;
+        btn.style.width = `${slotW}%`;
+        btn.style.height = `${slotH}%`;
+        btn.setAttribute("aria-label", isUnlocked ? breed.name : "unknown cat");
+
+        const label = document.createElement("span");
+        label.className = "slot-label";
+        label.textContent = isUnlocked ? `${breed.emoji} ${breed.name}` : "???";
+        btn.appendChild(label);
+
+        btn.addEventListener("mouseenter", () => {
+          dom.passage.textContent = isUnlocked
+            ? `${breed.emoji} ${breed.name}\n${breed.blurb}`
+            : "???\nYou don't know this one yet.";
+        });
+        btn.addEventListener("mouseleave", () => {
+          dom.passage.textContent = basePrompt;
+        });
+        btn.addEventListener("click", () => startWithBreed(breed));
+
+        dom.breedOverlay.appendChild(btn);
+      });
+    }
   },
 
   act1_intro() {
