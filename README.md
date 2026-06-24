@@ -4,9 +4,25 @@ A text-based narrative game about Ray, a jazz pianist on the edge of a record de
 
 Built with vanilla HTML, CSS, and JavaScript. No build step required.
 
-## Play
+## Play locally
 
-Open `index.html` in any modern browser, or deploy the repository to any static host.
+Open `index.html` in any modern browser, or run:
+
+```bash
+npm start
+```
+
+The game will be served at `http://localhost:3000`.
+
+## Deploy
+
+The repository includes a tiny Node.js static server (`server.js`), `package.json`, and a `Procfile`, so it can be deployed on Build.io, Heroku, Railway, Render, or any platform that detects a Node.js app.
+
+For pure static hosting (GitHub Pages, Netlify, Vercel, etc.), `index.html` is the entry point and no server is required.
+
+## Save system
+
+Progress is auto-saved to `localStorage` after every choice. When a player returns, they can continue their run or start a new game.
 
 ## How it works
 

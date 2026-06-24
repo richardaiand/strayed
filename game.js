@@ -59,6 +59,8 @@ const PERSONALITIES = {
 const SOCIAL_STYLES = ["Wallflower", "Tsundere", "Velcro Cat", "Little Gremlin"];
 const CORE_DRIVES = ["Bottomless Pit", "Professional Napper", "Tiny Detective", "CEO of the Household"];
 
+const SAVE_KEY = "strayed_save_v1";
+
 const state = {
   cat: null,
   trust: 10,
@@ -68,6 +70,34 @@ const state = {
   awaitingInput: false,
   freeInputTarget: null
 };
+
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (e) {
+    // localStorage may be unavailable or full; fail silently
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved || !saved.scene || saved.scene === "start") return null;
+    return saved;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearSave() {
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch (e) {
+    // ignore
+  }
+}
 
 const dom = {
   passage: document.getElementById("passage"),
@@ -292,6 +322,7 @@ function goToScene(sceneName) {
     showPassage("[The night ends here.]");
     hideChoices();
   }
+  saveGame();
 }
 
 /* ---------------- SCENES ---------------- */
@@ -517,12 +548,39 @@ const SCENES = {
 
 /* ---------------- INIT ---------------- */
 
-dom.restart.addEventListener("click", () => goToScene("start"));
+dom.restart.addEventListener("click", () => {
+  clearSave();
+  goToScene("start");
+});
 
 dom.toggleLog.addEventListener("click", () => {
   dom.log.classList.toggle("hidden");
   dom.toggleLog.textContent = dom.log.classList.contains("hidden") ? "show memory" : "hide memory";
 });
 
+function boot() {
+  const saved = loadGame();
+  if (saved) {
+    Object.assign(state, saved);
+    updateCatCard();
+    saved.log.forEach(entry => {
+      const li = document.createElement("li");
+      li.textContent = entry;
+      dom.logList.appendChild(li);
+    });
+    showPassage(
+      "Welcome back.\n\n" +
+      `You were last in: ${state.scene.replace(/_/g, " ")}.\n` +
+      `The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
+    );
+    showChoices([
+      { label: "Continue where you left off", action: () => goToScene(state.scene) },
+      { label: "Start a new game", action: () => { clearSave(); goToScene("start"); } }
+    ]);
+  } else {
+    goToScene("start");
+  }
+}
+
 // Start the game
-goToScene("start");
+boot();
