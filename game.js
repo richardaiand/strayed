@@ -102,6 +102,9 @@ function clearSave() {
 const dom = {
   passage: document.getElementById("passage"),
   choices: document.getElementById("choices"),
+  dialogueBox: document.getElementById("dialogue-box"),
+  namePlate: document.getElementById("name-plate"),
+  advanceIndicator: document.getElementById("advance-indicator"),
   catInfo: document.getElementById("cat-info"),
   catEmoji: document.getElementById("cat-emoji"),
   catName: document.getElementById("cat-name"),
@@ -181,13 +184,106 @@ function logEvent(text) {
   dom.logList.appendChild(li);
 }
 
-function showPassage(text) {
-  dom.passage.innerHTML = "";
-  const p = document.createElement("p");
-  p.textContent = text;
-  p.classList.add("fade-in");
-  dom.passage.appendChild(p);
+/* ---------- Phoenix Wright style dialogue system ---------- */
+
+let dialogueQueue = [];
+let dialogueIndex = 0;
+let typewriterTimer = null;
+let currentSpeaker = "RAY";
+let dialogueComplete = false;
+let afterDialogueCb = null;
+
+function setSpeaker(name) {
+  currentSpeaker = name;
+  dom.namePlate.textContent = name;
+  dom.namePlate.className = "name-plate";
+  if (name === "THE CAT" || name === "CAT") dom.namePlate.classList.add("cat");
+  else if (name === "NARRATION" || name === "—") dom.namePlate.classList.add("narration");
+  else if (name === "NEIGHBOR") dom.namePlate.classList.add("neighbor");
 }
+
+function clearTypewriter() {
+  if (typewriterTimer) {
+    clearInterval(typewriterTimer);
+    typewriterTimer = null;
+  }
+}
+
+function showAdvanceIndicator() {
+  dom.advanceIndicator.classList.remove("hidden");
+}
+
+function hideAdvanceIndicator() {
+  dom.advanceIndicator.classList.add("hidden");
+}
+
+function typeOut(text) {
+  clearTypewriter();
+  dialogueComplete = false;
+  hideAdvanceIndicator();
+  dom.passage.textContent = "";
+  let i = 0;
+  const speed = 18;
+  typewriterTimer = setInterval(() => {
+    if (i < text.length) {
+      dom.passage.textContent = text.slice(0, i + 1);
+      i++;
+    } else {
+      clearTypewriter();
+      dialogueComplete = true;
+      if (dialogueIndex < dialogueQueue.length - 1 || afterDialogueCb) {
+        showAdvanceIndicator();
+      }
+    }
+  }, speed);
+}
+
+function advanceDialogue() {
+  if (!dialogueComplete) {
+    // Skip typewriter, show full text immediately
+    clearTypewriter();
+    const current = dialogueQueue[dialogueIndex];
+    if (current) dom.passage.textContent = current.text;
+    dialogueComplete = true;
+    if (dialogueIndex < dialogueQueue.length - 1 || afterDialogueCb) {
+      showAdvanceIndicator();
+    }
+    return;
+  }
+
+  dialogueIndex++;
+  if (dialogueIndex < dialogueQueue.length) {
+    const next = dialogueQueue[dialogueIndex];
+    setSpeaker(next.speaker);
+    typeOut(next.text);
+  } else {
+    hideAdvanceIndicator();
+    const cb = afterDialogueCb;
+    afterDialogueCb = null;
+    if (cb) cb();
+  }
+}
+
+function showPassage(text, speaker, callback) {
+  afterDialogueCb = callback || null;
+  dialogueQueue = [{ speaker: speaker || "RAY", text: text }];
+  dialogueIndex = 0;
+  setSpeaker(dialogueQueue[0].speaker);
+  hideChoices();
+  typeOut(dialogueQueue[0].text);
+}
+
+function showDialogue(lines, callback) {
+  afterDialogueCb = callback || null;
+  dialogueQueue = lines;
+  dialogueIndex = 0;
+  setSpeaker(dialogueQueue[0].speaker);
+  hideChoices();
+  typeOut(dialogueQueue[0].text);
+}
+
+// Click anywhere on the dialogue box to advance
+dom.dialogueBox.addEventListener("click", advanceDialogue);
 
 function showChoices(options) {
   dom.choices.innerHTML = "";
@@ -284,6 +380,7 @@ function offerFreeInput(prompt, target, onSubmit) {
   state.awaitingInput = true;
   state.freeInputTarget = target;
   hideChoices();
+  hideAdvanceIndicator();
   dom.freeInput.classList.remove("hidden");
   dom.inputPrompt.textContent = prompt;
   dom.playerText.focus();
@@ -340,18 +437,17 @@ const SCENES = {
     dom.log.classList.add("hidden");
     dom.catInfo.classList.add("hidden");
 
-    showPassage(
-      "The gig is over. The club has emptied out, and the alley behind it smells like rain that never came. " +
-      "Your fingers are still warm from the keys. Your shoulders are not.\n\n" +
-      "You find it sitting beside your instrument case: a cat, motionless, watching you with the calm of something that has already made a decision. " +
-      "You have a 10am call with a record label tomorrow. You do not have room for this.\n\n" +
-      "What do you do?"
-    );
-    showChoices([
-      { label: "Let it in for just one night", action: () => { adjustTrust(8); state.choices.act1 = "let_in"; logEvent("Act 1: You let the cat in for one night."); goToScene("act1_morning"); } },
-      { label: "Leave water outside and go to bed", action: () => { adjustTrust(2); state.choices.act1 = "water"; logEvent("Act 1: You left water outside."); goToScene("act1_morning"); } },
-      { label: "Try to shoo it away", action: () => { adjustTrust(-6); state.choices.act1 = "shoo"; logEvent("Act 1: You tried to shoo the cat away."); goToScene("act1_morning"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "The gig is over. The club has emptied out, and the alley behind it smells like rain that never came. My fingers are still warm from the keys. My shoulders are not." },
+      { speaker: "RAY", text: "There's something sitting beside my instrument case. A cat. Motionless. Watching me with the calm of something that has already made a decision." },
+      { speaker: "RAY", text: "I have a 10am call with a record label tomorrow. I do not have room for this." }
+    ], () => {
+      showChoices([
+        { label: "Let it in for just one night", action: () => { adjustTrust(8); state.choices.act1 = "let_in"; logEvent("Act 1: You let the cat in for one night."); goToScene("act1_morning"); } },
+        { label: "Leave water outside and go to bed", action: () => { adjustTrust(2); state.choices.act1 = "water"; logEvent("Act 1: You left water outside."); goToScene("act1_morning"); } },
+        { label: "Try to shoo it away", action: () => { adjustTrust(-6); state.choices.act1 = "shoo"; logEvent("Act 1: You tried to shoo the cat away."); goToScene("act1_morning"); } }
+      ]);
+    });
   },
 
   act1_morning() {
@@ -359,119 +455,123 @@ const SCENES = {
     const reaction = state.choices.act1 === "let_in"
       ? "It slept under the radiator and was gone before sunrise."
       : state.choices.act1 === "water"
-        ? "The bowl was empty when you woke. The cat was not."
-        : "It let you close the door. Then it sat outside it all night.";
+        ? "The bowl was empty when I woke. The cat was not."
+        : "It let me close the door. Then it sat outside it all night.";
 
-    showPassage(
-      `Morning comes too early. ${reaction}\n\n` +
-      "The label call goes better than you expected. They want to hear more. They want to see you. " +
-      "You hang up and notice the scratches on your door, the empty windowsill, the silence that is somehow louder than it used to be.\n\n" +
-      "That evening, the cat is back. Same spot. Same look. It is not asking permission.\n\n" +
-      `It is a ${state.cat.breed.name}. ${state.cat.breed.blurb}\n\n` +
-      `And it is ${state.cat.personality.name.toLowerCase()}. ${state.cat.personality.description}`
-    );
-
-    offerFreeInput(
-      "It is looking at you. Say something to the cat.",
-      "act1_greeting",
-      () => {
-        showPassage(
-          "You said what you said. The cat heard it. Whether that means anything is still up for debate.\n\n" +
-          "You go to bed with the door open a few inches more than last night."
-        );
-        showChoices([
-          { label: "Begin the long negotiation →", action: () => goToScene("rehearsal_invasion") }
-        ]);
-      }
-    );
+    showDialogue([
+      { speaker: "RAY", text: `Morning comes too early. ${reaction}` },
+      { speaker: "RAY", text: "The label call goes better than I expected. They want to hear more. They want to see me. I hang up and notice the scratches on my door, the empty windowsill, the silence that is somehow louder than it used to be." },
+      { speaker: "RAY", text: "That evening, the cat is back. Same spot. Same look. It is not asking permission." },
+      { speaker: "RAY", text: `It is a ${state.cat.breed.name}. ${state.cat.breed.blurb}` },
+      { speaker: "RAY", text: `And it is ${state.cat.personality.name.toLowerCase()}. ${state.cat.personality.description}` }
+    ], () => {
+      offerFreeInput(
+        "It is looking at you. Say something to the cat.",
+        "act1_greeting",
+        () => {
+          showDialogue([
+            { speaker: "RAY", text: "I said what I said. The cat heard it. Whether that means anything is still up for debate." },
+            { speaker: "RAY", text: "I go to bed with the door open a few inches more than last night." }
+          ], () => {
+            showChoices([
+              { label: "Begin the long negotiation →", action: () => goToScene("rehearsal_invasion") }
+            ]);
+          });
+        }
+      );
+    });
   },
 
   rehearsal_invasion() {
-    showPassage(
-      "You are running a home practice session. Your bandmate is on the call, half-listening, half-texting. " +
-      "You find the groove of a new piece — something slower, something that might be good — and then the cat walks across your keyboard.\n\n" +
-      "The chord it plays does not exist in any theory book. Your bandmate loses it. " +
-      "The cat looks pleased, or possibly bored. It is hard to tell."
-    );
-    showChoices([
-      { label: "Laugh it off and keep the take", action: () => { adjustTrust(6); state.choices.rehearsal = "laugh"; logEvent("Rehearsal: You laughed it off."); goToScene("label_call"); } },
-      { label: "Lock the cat out of the room from now on", action: () => { adjustTrust(-8); state.choices.rehearsal = "lock"; logEvent("Rehearsal: You locked the cat out."); goToScene("label_call"); } },
-      { label: "Try to compose around the chord", action: () => { adjustTrust(4); state.choices.rehearsal = "compose"; logEvent("Rehearsal: You composed around the cat's chord."); goToScene("label_call"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "I'm running a home practice session. My bandmate is on the call, half-listening, half-texting. I find the groove of a new piece — something slower, something that might be good — and then the cat walks across my keyboard." },
+      { speaker: "RAY", text: "The chord it plays does not exist in any theory book. My bandmate loses it. The cat looks pleased, or possibly bored. It is hard to tell." }
+    ], () => {
+      showChoices([
+        { label: "Laugh it off and keep the take", action: () => { adjustTrust(6); state.choices.rehearsal = "laugh"; logEvent("Rehearsal: You laughed it off."); goToScene("label_call"); } },
+        { label: "Lock the cat out of the room from now on", action: () => { adjustTrust(-8); state.choices.rehearsal = "lock"; logEvent("Rehearsal: You locked the cat out."); goToScene("label_call"); } },
+        { label: "Try to compose around the chord", action: () => { adjustTrust(4); state.choices.rehearsal = "compose"; logEvent("Rehearsal: You composed around the cat's chord."); goToScene("label_call"); } }
+      ]);
+    });
   },
 
   label_call() {
-    showPassage(
-      "The A&R rep. The big one. The one who actually signs people. You put on a clean shirt and angle the lamp so the apartment looks like somewhere an adult lives.\n\n" +
-      "Five minutes in, the cat jumps onto the desk. It sits directly in front of the camera. It stares into the lens with the authority of someone who has reviewed your contract and found it wanting."
-    );
-    showChoices([
-      { label: "Introduce it to the rep", action: () => { adjustTrust(7); state.choices.labelCall = "introduce"; logEvent("Label call: You introduced the cat."); goToScene("emergency"); } },
-      { label: "Move it off the desk gently", action: () => { adjustTrust(1); state.choices.labelCall = "move"; logEvent("Label call: You moved the cat off the desk."); goToScene("emergency"); } },
-      { label: "Pretend nothing is happening", action: () => { adjustTrust(-3); state.choices.labelCall = "ignore"; logEvent("Label call: You pretended nothing was happening."); goToScene("emergency"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "The A&R rep. The big one. The one who actually signs people. I put on a clean shirt and angle the lamp so the apartment looks like somewhere an adult lives." },
+      { speaker: "RAY", text: "Five minutes in, the cat jumps onto the desk. It sits directly in front of the camera. It stares into the lens with the authority of someone who has reviewed my contract and found it wanting." }
+    ], () => {
+      showChoices([
+        { label: "Introduce it to the rep", action: () => { adjustTrust(7); state.choices.labelCall = "introduce"; logEvent("Label call: You introduced the cat."); goToScene("emergency"); } },
+        { label: "Move it off the desk gently", action: () => { adjustTrust(1); state.choices.labelCall = "move"; logEvent("Label call: You moved the cat off the desk."); goToScene("emergency"); } },
+        { label: "Pretend nothing is happening", action: () => { adjustTrust(-3); state.choices.labelCall = "ignore"; logEvent("Label call: You pretended nothing was happening."); goToScene("emergency"); } }
+      ]);
+    });
   },
 
   emergency() {
-    showPassage(
-      "3am. The cat is not eating. It is not moving much. Something is wrong in the way wrong things are wrong before you have words for them.\n\n" +
-      "The all-night vet is forty minutes away. You have a studio session at 8am with a producer flying in from out of town. You cannot reschedule. You cannot do both perfectly."
-    );
-    showChoices([
-      { label: "Take it to the vet and risk the session", action: () => { adjustTrust(12); state.choices.emergency = "vet"; logEvent("Emergency: You went to the vet."); goToScene("neighbor"); } },
-      { label: "Call the vet for advice and go to the session", action: () => { adjustTrust(2); state.choices.emergency = "call"; logEvent("Emergency: You called the vet for advice."); goToScene("neighbor"); } },
-      { label: "Go to the session; the cat will probably be fine", action: () => { adjustTrust(-10); state.choices.emergency = "session"; logEvent("Emergency: You went to the session."); goToScene("neighbor"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "3am. The cat is not eating. It is not moving much. Something is wrong in the way wrong things are wrong before you have words for them." },
+      { speaker: "RAY", text: "The all-night vet is forty minutes away. I have a studio session at 8am with a producer flying in from out of town. I cannot reschedule. I cannot do both perfectly." }
+    ], () => {
+      showChoices([
+        { label: "Take it to the vet and risk the session", action: () => { adjustTrust(12); state.choices.emergency = "vet"; logEvent("Emergency: You went to the vet."); goToScene("neighbor"); } },
+        { label: "Call the vet for advice and go to the session", action: () => { adjustTrust(2); state.choices.emergency = "call"; logEvent("Emergency: You called the vet for advice."); goToScene("neighbor"); } },
+        { label: "Go to the session; the cat will probably be fine", action: () => { adjustTrust(-10); state.choices.emergency = "session"; logEvent("Emergency: You went to the session."); goToScene("neighbor"); } }
+      ]);
+    });
   },
 
   neighbor() {
-    showPassage(
-      "Your downstairs neighbor knocks at 6pm. She looks like she has not slept.\n\n" +
-      "'The cat,' she says. 'It cries at 5am. Every day this week.'\n\n" +
-      "You have been getting home at 2am and sleeping through it. She has not. The cat, audibly, is also not happy. Something has to change."
-    );
-    showChoices([
-      { label: "Apologize and buy a calming diffuser", action: () => { adjustTrust(3); state.choices.neighbor = "diffuser"; logEvent("Neighbor: You bought a calming diffuser."); goToScene("gig_conflict"); } },
-      { label: "Ask her to stop feeding it from her window", action: () => { adjustTrust(-2); state.choices.neighbor = "ask_stop"; logEvent("Neighbor: You asked her to stop feeding it."); goToScene("gig_conflict"); } },
-      { label: "Offer to let her help find it a home", action: () => { adjustTrust(-5); state.choices.neighbor = "rehome"; logEvent("Neighbor: You considered rehoming it."); goToScene("gig_conflict"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "My downstairs neighbor knocks at 6pm. She looks like she has not slept." },
+      { speaker: "NEIGHBOR", text: "\"The cat. It cries at 5am. Every day this week.\"" },
+      { speaker: "RAY", text: "I've been getting home at 2am and sleeping through it. She has not. The cat, audibly, is also not happy. Something has to change." }
+    ], () => {
+      showChoices([
+        { label: "Apologize and buy a calming diffuser", action: () => { adjustTrust(3); state.choices.neighbor = "diffuser"; logEvent("Neighbor: You bought a calming diffuser."); goToScene("gig_conflict"); } },
+        { label: "Ask her to stop feeding it from her window", action: () => { adjustTrust(-2); state.choices.neighbor = "ask_stop"; logEvent("Neighbor: You asked her to stop feeding it."); goToScene("gig_conflict"); } },
+        { label: "Offer to let her help find it a home", action: () => { adjustTrust(-5); state.choices.neighbor = "rehome"; logEvent("Neighbor: You considered rehoming it."); goToScene("gig_conflict"); } }
+      ]);
+    });
   },
 
   gig_conflict() {
-    showPassage(
-      "A last-minute weekend gig. Good money, good venue, good for your name. Three days away from home.\n\n" +
-      "The cat has just started sleeping near you instead of under the bed. You can see the difference in the shape of its body when you enter the room. " +
-      "It is a small thing. It is not a small thing."
-    );
-    showChoices([
-      { label: "Take the gig", action: () => { adjustTrust(-6); state.choices.gig = "take"; logEvent("Gig conflict: You took the gig."); goToScene("recording_trip"); } },
-      { label: "Find a paid sitter and stay connected", action: () => { adjustTrust(4); state.choices.gig = "sitter"; logEvent("Gig conflict: You hired a sitter."); goToScene("recording_trip"); } },
-      { label: "Ask a bandmate to house-sit", action: () => { adjustTrust(2); state.choices.gig = "bandmate"; logEvent("Gig conflict: A bandmate house-sat."); goToScene("recording_trip"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "A last-minute weekend gig. Good money, good venue, good for my name. Three days away from home." },
+      { speaker: "RAY", text: "The cat has just started sleeping near me instead of under the bed. I can see the difference in the shape of its body when I enter the room. It is a small thing. It is not a small thing." }
+    ], () => {
+      showChoices([
+        { label: "Take the gig", action: () => { adjustTrust(-6); state.choices.gig = "take"; logEvent("Gig conflict: You took the gig."); goToScene("recording_trip"); } },
+        { label: "Find a paid sitter and stay connected", action: () => { adjustTrust(4); state.choices.gig = "sitter"; logEvent("Gig conflict: You hired a sitter."); goToScene("recording_trip"); } },
+        { label: "Ask a bandmate to house-sit", action: () => { adjustTrust(2); state.choices.gig = "bandmate"; logEvent("Gig conflict: A bandmate house-sat."); goToScene("recording_trip"); } }
+      ]);
+    });
   },
 
   recording_trip() {
-    showPassage(
-      "The label wants you in another city for two weeks to record. This is everything you worked for. The cat is not invited.\n\n" +
-      "Every arrangement you consider feels like a small betrayal of something you did not know you had signed up for."
-    );
-    showChoices([
-      { label: "Go. This is the contract.", action: () => { adjustTrust(-10); state.choices.recording = "go"; logEvent("Recording trip: You went to the other city."); goToScene("quiet_night"); } },
-      { label: "Negotiate a local studio instead", action: () => { adjustTrust(6); state.choices.recording = "local"; logEvent("Recording trip: You negotiated local recording."); goToScene("quiet_night"); } },
-      { label: "Bring the cat. Find a pet-friendly rental.", action: () => { adjustTrust(8); state.choices.recording = "bring"; logEvent("Recording trip: You brought the cat."); goToScene("quiet_night"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "The label wants me in another city for two weeks to record. This is everything I worked for. The cat is not invited." },
+      { speaker: "RAY", text: "Every arrangement I consider feels like a small betrayal of something I didn't know I'd signed up for." }
+    ], () => {
+      showChoices([
+        { label: "Go. This is the contract.", action: () => { adjustTrust(-10); state.choices.recording = "go"; logEvent("Recording trip: You went to the other city."); goToScene("quiet_night"); } },
+        { label: "Negotiate a local studio instead", action: () => { adjustTrust(6); state.choices.recording = "local"; logEvent("Recording trip: You negotiated local recording."); goToScene("quiet_night"); } },
+        { label: "Bring the cat. Find a pet-friendly rental.", action: () => { adjustTrust(8); state.choices.recording = "bring"; logEvent("Recording trip: You brought the cat."); goToScene("quiet_night"); } }
+      ]);
+    });
   },
 
   quiet_night() {
-    showPassage(
-      "For the first time in months, you have a night off. No gig. No call. No deadline.\n\n" +
-      "The cat is in the room. The city is quiet outside. You could practice. You could rest. You could just sit there."
-    );
-    showChoices([
-      { label: "Practice the new piece", action: () => { adjustTrust(3); state.choices.quiet = "practice"; logEvent("Quiet night: You practiced."); goToScene("ending"); } },
-      { label: "Rest on the couch", action: () => { adjustTrust(5); state.choices.quiet = "rest"; logEvent("Quiet night: You rested."); goToScene("ending"); } },
-      { label: "Sit with the cat and do nothing", action: () => { adjustTrust(7); state.choices.quiet = "sit"; logEvent("Quiet night: You sat with the cat."); goToScene("ending"); } }
-    ]);
+    showDialogue([
+      { speaker: "RAY", text: "For the first time in months, I have a night off. No gig. No call. No deadline." },
+      { speaker: "RAY", text: "The cat is in the room. The city is quiet outside. I could practice. I could rest. I could just sit there." }
+    ], () => {
+      showChoices([
+        { label: "Practice the new piece", action: () => { adjustTrust(3); state.choices.quiet = "practice"; logEvent("Quiet night: You practiced."); goToScene("ending"); } },
+        { label: "Rest on the couch", action: () => { adjustTrust(5); state.choices.quiet = "rest"; logEvent("Quiet night: You rested."); goToScene("ending"); } },
+        { label: "Sit with the cat and do nothing", action: () => { adjustTrust(7); state.choices.quiet = "sit"; logEvent("Quiet night: You sat with the cat."); goToScene("ending"); } }
+      ]);
+    });
   },
 
   ending() {
@@ -538,14 +638,15 @@ const SCENES = {
     };
 
     const end = endings[endingKey];
-    showPassage(
-      `${end.emoji} ${end.title.toUpperCase()}\n\n${end.text}\n\n` +
-      `Final trust: ${trust}/100 · ${cat.breed.name} · ${cat.personality.name}`
-    );
-    logEvent(`Ending: ${end.title} (trust ${trust})`);
-    hideChoices();
-    dom.restart.classList.remove("hidden");
-    dom.toggleLog.classList.remove("hidden");
+    showDialogue([
+      { speaker: "—", text: `${end.emoji}  ${end.title.toUpperCase()}` },
+      { speaker: "RAY", text: end.text },
+      { speaker: "—", text: `Final trust: ${trust}/100 · ${cat.breed.name} · ${cat.personality.name}` }
+    ], () => {
+      logEvent(`Ending: ${end.title} (trust ${trust})`);
+      dom.restart.classList.remove("hidden");
+      dom.toggleLog.classList.remove("hidden");
+    });
   }
 };
 
@@ -592,17 +693,22 @@ function boot() {
       dom.logList.appendChild(li);
     });
     showPassage(
-      "Welcome back.\n\n" +
-      (revealed
-        ? `You were last in: ${state.scene.replace(/_/g, " ")}.\n` +
-          `The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
-        : "You were in the alley. The cat was still just a shape in the dark.")
+      "Welcome back.",
+      "RAY",
+      () => {
+        showDialogue([
+          { speaker: "RAY", text: revealed
+            ? `I was last in: ${state.scene.replace(/_/g, " ")}. The ${state.cat.breed.name.toLowerCase()} is ${state.cat.personality.name.toLowerCase()}. Trust is at ${state.trust}/100.`
+            : "I was in the alley. The cat was still just a shape in the dark." }
+        ], () => {
+          showChoices([
+            { label: "Continue where you left off", action: () => goToScene(state.scene) },
+            { label: "Start a new game", action: () => { clearSave(); goToScene("start"); } }
+          ]);
+        });
+      }
     );
     if (window.renderScene) window.renderScene(state.scene, state);
-    showChoices([
-      { label: "Continue where you left off", action: () => goToScene(state.scene) },
-      { label: "Start a new game", action: () => { clearSave(); goToScene("start"); } }
-    ]);
   } else {
     goToScene("start");
   }

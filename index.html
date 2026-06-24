@@ -47,9 +47,13 @@
     <ul id="log-list"></ul>
   </section>
 
-  <!-- Chat box (bottom) -->
+  <!-- Dialogue box (bottom, Phoenix Wright style) -->
   <div id="chat-box">
-    <div id="passage"></div>
+    <div id="dialogue-box">
+      <div id="name-plate" class="name-plate">RAY</div>
+      <div id="passage"></div>
+      <div id="advance-indicator" class="advance-indicator hidden">▼</div>
+    </div>
     <div id="choices"></div>
     <div id="free-input" class="free-input hidden">
       <p id="input-prompt"></p>
@@ -60,7 +64,7 @@
 
   <!-- Background music -->
   <audio id="bg-music" loop preload="auto">
-    <source src="assets/music.mp3" type="audio/mpeg" />
+    <source src="assets/Autumn Jazz Drift.mp3" type="audio/mpeg" />
   </audio>
 
   <script src="pixelart.js"></script>
