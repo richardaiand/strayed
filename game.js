@@ -59,6 +59,158 @@ const PERSONALITIES = {
 const SOCIAL_STYLES = ["Wallflower", "Tsundere", "Velcro Cat", "Little Gremlin"];
 const CORE_DRIVES = ["Bottomless Pit", "Professional Napper", "Tiny Detective", "CEO of the Household"];
 
+/* ---------- PERSONALITY EVENT LIBRARY ----------
+ * Each scene can pull a social-style reaction, a core-drive reaction,
+ * and extra trait-locked choices. This makes every cat feel different
+ * without hand-writing every combination.
+ */
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function catTag(tag) {
+  if (!state.cat) return false;
+  return state.cat.social === tag || state.cat.drive === tag;
+}
+
+const SOCIAL_REACTIONS = {
+  act1_intro: {
+    Wallflower: ["It does not move when I approach. It is watching the ground near my feet, not me."],
+    Tsundere: ["It looks away the moment I look at it, then flicks its tail like I have already disappointed it."],
+    "Velcro Cat": ["It is already closer than it was five seconds ago. I do not remember it moving."],
+    "Little Gremlin": ["It tilts its head. I can see it calculating the resale value of my instrument case."]
+  },
+  act1_morning: {
+    Wallflower: ["When I wake, it is tucked behind the laundry basket. I only know it stayed because the water bowl is empty."],
+    Tsundere: ["It is sitting in the exact center of the hallway, pretending it does not care whether I step over it."],
+    "Velcro Cat": ["It is asleep on my shoes. I am late. I do not have the heart to move it yet."],
+    "Little Gremlin": ["There is a sock on the floor that was not on the floor before. The cat is innocent. Obviously."]
+  },
+  rehearsal_invasion: {
+    Wallflower: ["It does not walk across the keys so much as freeze mid-step, suddenly aware it is the center of attention."],
+    Tsundere: ["It plays one deliberate, dissonant chord, then looks at me as if to say, 'You were ignoring me.'"],
+    "Velcro Cat": ["It walks across the keyboard on its way to my lap. The chord is incidental. The destination is not."],
+    "Little Gremlin": ["It sprints the full length of the keyboard twice, leaves a pencil on the floor, and exits without explanation."]
+  },
+  label_call: {
+    Wallflower: ["It jumps onto the desk, sees the camera, and immediately tries to become part of the wall."],
+    Tsundere: ["It plants itself in front of the lens and begins washing its leg with aggressive concentration."],
+    "Velcro Cat": ["It curls around the microphone and purrs loud enough to make the A&R rep ask if I have a subwoofer."],
+    "Little Gremlin": ["It bats the webcam until the angle is crooked, then sits behind the monitor like a tiny supervisor."]
+  },
+  emergency: {
+    Wallflower: ["It hides under the bed and does not cry. That is the worst part. I have to lie on the floor to see if it is still breathing."],
+    Tsundere: ["It glares at me like the emergency is my fault. Maybe it is."],
+    "Velcro Cat": ["It presses against my hand, hot and still, and will not let me move more than six inches away."],
+    "Little Gremlin": ["It is limp and quiet. I would trade every gig I have ever booked for one more hour of chaos."]
+  },
+  neighbor: {
+    Wallflower: ["The cat is nowhere in sight during the conversation. I find it later inside the bathroom cabinet."],
+    Tsundere: ["It watches the entire argument from the top of the bookshelf, radiating silent judgment at both of us."],
+    "Velcro Cat": ["It weaves between my ankles the whole time, as if to remind the neighbor that I am already spoken for."],
+    "Little Gremlin": ["It chooses this exact moment to knock a glass off the counter and look at me. The timing is almost admirable."]
+  },
+  gig_conflict: {
+    Wallflower: ["It sits on my suitcase while I pack, very small, very still."],
+    Tsundere: ["It walks into the bedroom and does not come out. If it is punishing me, it is working."],
+    "Velcro Cat": ["It follows me from room to room, close enough to trip me, not close enough to forgive me."],
+    "Little Gremlin": ["It has been unusually well-behaved for three hours. I am terrified."]
+  },
+  recording_trip: {
+    Wallflower: ["It watches me pack from the highest shelf in the closet. I cannot reach it. I cannot leave until I do."],
+    Tsundere: ["It refuses to acknowledge the suitcase. It also refuses to leave the suitcase."],
+    "Velcro Cat": ["It climbs inside the suitcase and looks up at me. There is no room for clothes. There is no argument."],
+    "Little Gremlin": ["It has unzipped the suitcase twice. I am starting to think it understands zippers."]
+  },
+  quiet_night: {
+    Wallflower: ["It is asleep in the corner it has decided is safest. I can see one ear twitching."],
+    Tsundere: ["It is awake, facing the wall, pretending it does not know I am here."],
+    "Velcro Cat": ["It is pressed against my side, heavier than physics should allow."],
+    "Little Gremlin": ["It is trying to fit a bottle cap under the couch. This is the most important thing that has ever happened."]
+  }
+};
+
+const DRIVE_REACTIONS = {
+  act1_intro: {
+    "Bottomless Pit": ["It meows once, a small sound, but it is the sound of an invoice."],
+    "Professional Napper": ["It yawns so wide I can see its whole life philosophy."],
+    "Tiny Detective": ["It sniffs my case, my shoes, my hand, in that order. Evidence is being collected."],
+    "CEO of the Household": ["It does not wait to be invited. It walks past me into the apartment like it owns the lease."]
+  },
+  act1_morning: {
+    "Bottomless Pit": ["The food dish I put down is empty before I finish my coffee."],
+    "Professional Napper": ["It has rotated through three sleeping spots since breakfast and has not woken once."],
+    "Tiny Detective": ["Every bag in the apartment has been investigated. Every shoe has been sniffed."],
+    "CEO of the Household": ["It has claimed the piano bench. The piano bench was mine yesterday."]
+  },
+  rehearsal_invasion: {
+    "Bottomless Pit": ["It stops mid-keyboard-walk to see if there is food involved. There is not. It walks anyway."],
+    "Professional Napper": ["It plays the chord, then curls up on the sustain pedal. The note rings forever."],
+    "Tiny Detective": ["It investigates every knob on the keyboard while my bandmate is still laughing."],
+    "CEO of the Household": ["It sits on the highest key like a tiny executive chair."]
+  },
+  label_call: {
+    "Bottomless Pit": ["It is blocking the camera because it has decided now is dinner time."],
+    "Professional Napper": ["It falls asleep on the warm laptop. The rep thinks I have a very relaxed paperweight."],
+    "Tiny Detective": ["It sniffs the camera lens, then the rep's voice, then my shirt. Something does not add up."],
+    "CEO of the Household": ["It stares into the lens because someone must be in charge of this meeting."]
+  },
+  emergency: {
+    "Bottomless Pit": ["It refused its favorite food. That is when I knew."],
+    "Professional Napper": ["It is too still. A cat that sleeps this much should not be this still."],
+    "Tiny Detective": ["It keeps sniffing its own side, then looking at me, then sniffing again. It found something I cannot see."],
+    "CEO of the Household": ["It is weak, but it still tries to walk to the door first. Some instincts do not turn off."]
+  },
+  neighbor: {
+    "Bottomless Pit": ["It cries at 5am because it has already forgotten the midnight snack."],
+    "Professional Napper": ["It sleeps through the entire conversation. The neighbor does not believe me."],
+    "Tiny Detective": ["It has been watching the neighbor's window for two days. I think it knows about the treats."],
+    "CEO of the Household": ["It answers the neighbor's complaints with a slow blink from my shoulder."]
+  },
+  gig_conflict: {
+    "Bottomless Pit": ["It has been staring at the empty food bowl for ten minutes to make me feel guilt."],
+    "Professional Napper": ["It sleeps on my gig bag. It has never slept on my gig bag before."],
+    "Tiny Detective": ["It has been inspecting the suitcase since I pulled it out. It knows what luggage means."],
+    "CEO of the Household": ["It sits on my setlist like it is vetoing the whole tour."]
+  },
+  recording_trip: {
+    "Bottomless Pit": ["It is trying to fit into my backpack. I think it assumes all bags contain snacks."],
+    "Professional Napper": ["It is asleep on my folded clothes. I do not have the heart to pack them."],
+    "Tiny Detective": ["It has already explored the suitcase and is now sitting in it like a verdict."],
+    "CEO of the Household": ["It has parked itself on the contract. The message is not subtle."]
+  },
+  quiet_night: {
+    "Bottomless Pit": ["It is awake because it heard me think about a snack."],
+    "Professional Napper": ["It is asleep in three different positions at once."],
+    "Tiny Detective": ["It keeps opening one eye to check if I am still here."],
+    "CEO of the Household": ["It is sitting on the highest point in the room, surveying its quiet kingdom."]
+  }
+};
+
+function sceneText(event) {
+  const social = (SOCIAL_REACTIONS[event] && SOCIAL_REACTIONS[event][state.cat.social]) || [""];
+  const drive = (DRIVE_REACTIONS[event] && DRIVE_REACTIONS[event][state.cat.drive]) || [""];
+  return `${pick(social)} ${pick(drive)}`.trim();
+}
+
+function finalizeOptions(options) {
+  // Remove duplicate action keys, keep first, shuffle, cap at 4
+  const seen = new Set();
+  const unique = [];
+  for (const opt of options) {
+    const key = opt.key || opt.label;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(opt);
+  }
+  for (let i = unique.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [unique[i], unique[j]] = [unique[j], unique[i]];
+  }
+  return unique.slice(0, 4);
+}
+
 const SAVE_KEY = "strayed_save_v1";
 const UNLOCKS_KEY = "strayed_unlocks_v1";
 
@@ -543,16 +695,24 @@ const SCENES = {
   },
 
   act1_intro() {
+    const catLine = sceneText("act1_intro");
     showDialogue([
       { speaker: "RAY", text: "The gig is over. The club has emptied out, and the alley behind it smells like rain that never came. My fingers are still warm from the keys. My shoulders are not." },
-      { speaker: "RAY", text: "There's something sitting beside my instrument case. A cat. Motionless. Watching me with the calm of something that has already made a decision." },
+      { speaker: "RAY", text: `There's something sitting beside my instrument case. A cat. ${catLine}` },
       { speaker: "RAY", text: "I have a 10am call with a record label tomorrow. I do not have room for this." }
     ], () => {
-      showChoices([
+      const options = [
         { label: "Let it in for just one night", action: () => { adjustTrust(12); state.choices.act1 = "let_in"; logEvent("Act 1: You let the cat in for one night."); goToScene("act1_morning"); } },
         { label: "Leave water outside and go to bed", action: () => { adjustTrust(4); state.choices.act1 = "water"; logEvent("Act 1: You left water outside."); goToScene("act1_morning"); } },
         { label: "Try to shoo it away", action: () => { adjustTrust(-4); state.choices.act1 = "shoo"; logEvent("Act 1: You tried to shoo the cat away."); goToScene("act1_morning"); } }
-      ]);
+      ];
+      if (catTag("CEO of the Household")) {
+        options.push({ label: "Step aside and let it lead the way in", action: () => { adjustTrust(14); state.choices.act1 = "let_in"; logEvent("Act 1: You let the CEO cat take charge."); goToScene("act1_morning"); } });
+      }
+      if (catTag("Bottomless Pit")) {
+        options.push({ label: "Open a can of tuna first, then decide", action: () => { adjustTrust(10); state.choices.act1 = "let_in"; logEvent("Act 1: You bribed it with tuna."); goToScene("act1_morning"); } });
+      }
+      showChoices(options);
     });
   },
 

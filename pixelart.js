@@ -155,7 +155,7 @@
       rect(ox + 11, oy + 1, 1, 3, f);
     }
 
-    // Head (big soft slugcat face)
+    // Head (soft cat face with defined outline)
     const headW = isMaineCoon ? 14 : 12;
     const headX = ox + Math.floor((18 - headW) / 2);
     rect(headX, oy + 4, headW, 6, f);
@@ -165,7 +165,7 @@
       px(headX - 1, oy + 7, f);
       px(headX + headW, oy + 7, f);
     }
-    // chin shadow line to separate face from body
+    // chin shadow line
     rect(headX + 1, oy + 9, headW - 2, 1, pt);
 
     // Sphynx wrinkles
@@ -181,29 +181,36 @@
       px(headX + headW - 1, oy + 8, pt);
     }
 
-    // Eyes (large, round, low on face)
+    // Eyes (cat-like almonds with vertical slit pupils)
     const eyeY = isSphynx ? oy + 6 : oy + 7;
-    const eyeW = isSphynx ? 2 : 3;
-    // dark eye sockets for definition
-    rect(ox + 5, eyeY - 1, eyeW + 2, 4, dk);
-    rect(ox + 10, eyeY - 1, eyeW + 2, 4, dk);
-    // colored irises
-    rect(ox + 6, eyeY, eyeW, 3, e);
-    rect(ox + 11, eyeY, eyeW, 3, e);
-    // pupils
-    px(ox + 7, eyeY + 1, dk);
-    px(ox + 12, eyeY + 1, dk);
-    // eye shine
-    px(ox + 6, eyeY, "#ffffff");
-    px(ox + 11, eyeY, "#ffffff");
+    // left eye
+    px(ox + 6, eyeY, e);
+    px(ox + 7, eyeY, e);
+    px(ox + 8, eyeY, e);
+    px(ox + 6, eyeY + 1, e);
+    px(ox + 7, eyeY + 1, dk); // pupil
+    px(ox + 8, eyeY + 1, e);
+    px(ox + 6, eyeY + 2, e);
+    px(ox + 7, eyeY + 2, e);
+    px(ox + 8, eyeY + 2, e);
+    // right eye
+    px(ox + 11, eyeY, e);
+    px(ox + 12, eyeY, e);
+    px(ox + 13, eyeY, e);
+    px(ox + 11, eyeY + 1, e);
+    px(ox + 12, eyeY + 1, dk); // pupil
+    px(ox + 13, eyeY + 1, e);
+    px(ox + 11, eyeY + 2, e);
+    px(ox + 12, eyeY + 2, e);
+    px(ox + 13, eyeY + 2, e);
 
-    // Nose — small triangle
-    px(ox + 8, oy + 10, n);
+    // Nose — small cat nose
     px(ox + 9, oy + 10, n);
-    px(ox + 10, oy + 10, n);
+    px(ox + 8, oy + 11, pt);
     px(ox + 9, oy + 11, pt);
+    px(ox + 10, oy + 11, pt);
 
-    // Mouth — tiny downturned line
+    // Mouth — small line
     px(ox + 8, oy + 11, pt);
     px(ox + 10, oy + 11, pt);
 
@@ -321,8 +328,10 @@
 
     // glowing eyes
     const eyeY = isSphynx ? oy + 6 : oy + 7;
-    rect(ox + 6, eyeY + 1, 2, 1, "#8abfdf");
-    rect(ox + 11, eyeY + 1, 2, 1, "#8abfdf");
+    rect(ox + 6, eyeY, 3, 3, "#8abfdf");
+    rect(ox + 11, eyeY, 3, 3, "#8abfdf");
+    px(ox + 7, eyeY + 1, "#0a0a14");
+    px(ox + 12, eyeY + 1, "#0a0a14");
   }
 
   /* ---------- reusable scene elements ---------- */
