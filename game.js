@@ -664,10 +664,39 @@ dom.toggleLog.addEventListener("click", () => {
 const bgMusic = document.getElementById("bg-music");
 const musicToggle = document.getElementById("music-toggle");
 let musicPlaying = false;
+let musicManuallyControlled = false;
+
+function startMusic() {
+  if (musicPlaying || !bgMusic) return;
+  bgMusic.play().then(() => {
+    musicPlaying = true;
+    if (musicToggle) {
+      musicToggle.textContent = "♫";
+      musicToggle.classList.add("playing");
+    }
+  }).catch(() => {
+    // Autoplay blocked — will retry on first user interaction
+  });
+}
 
 if (musicToggle && bgMusic) {
-  bgMusic.volume = 0.4;
-  musicToggle.addEventListener("click", () => {
+  bgMusic.volume = 0.35;
+  // Try autoplay immediately
+  startMusic();
+  // Browsers block autoplay until interaction — start on first click/keypress
+  const startOnce = () => {
+    if (!musicManuallyControlled) startMusic();
+    document.removeEventListener("click", startOnce);
+    document.removeEventListener("keydown", startOnce);
+  };
+  document.addEventListener("click", startOnce);
+  document.addEventListener("keydown", startOnce);
+
+  musicToggle.addEventListener("click", (e) => {
+    e.stopPropagation();
+    musicManuallyControlled = true;
+    document.removeEventListener("click", startOnce);
+    document.removeEventListener("keydown", startOnce);
     if (musicPlaying) {
       bgMusic.pause();
       musicToggle.textContent = "♪";
