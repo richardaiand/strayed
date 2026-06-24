@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STRAYED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>STRAYED</h1>
+      <p class="tagline">What are you willing to slow down for?</p>
+    </header>
+
+    <main id="game">
+      <section id="cat-info" class="panel hidden">
+        <div class="cat-card">
+          <span id="cat-emoji" class="cat-emoji">🐱</span>
+          <div class="cat-details">
+            <h2 id="cat-name">the cat</h2>
+            <p id="cat-breed">—</p>
+            <p id="cat-personality">—</p>
+            <div id="trust-bar" class="trust-bar"><div id="trust-fill" class="trust-fill"></div></div>
+            <p id="trust-label">trust: uncertain</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="story" class="panel">
+        <div id="passage"></div>
+        <div id="choices"></div>
+        <div id="free-input" class="free-input hidden">
+          <p id="input-prompt"></p>
+          <input type="text" id="player-text" placeholder="Type to the cat..." autocomplete="off" />
+          <button id="submit-text">say it</button>
+        </div>
+      </section>
+
+      <section id="log" class="panel hidden">
+        <h3>Memory</h3>
+        <ul id="log-list"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <button id="restart" class="secondary hidden">start over</button>
+      <button id="toggle-log" class="secondary hidden">show memory</button>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
