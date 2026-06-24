@@ -19,38 +19,6 @@
 
   let currentScene = "start";
   let currentState = { cat: null };
-  let hoverIndex = -1;
-
-  function catIndexAt(clientX, clientY) {
-    if (currentScene !== "breed_select") return -1;
-    const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) / rect.width * 128;
-    if (x < 5 || x > 123) return -1;
-    return Math.min(4, Math.max(0, Math.floor((x - 5) / 25)));
-  }
-
-  function reportHover() {
-    if (typeof window.onBreedHover === "function") {
-      const breeds = window.BREEDS || [];
-      window.onBreedHover(hoverIndex, hoverIndex >= 0 ? breeds[hoverIndex] : null);
-    }
-  }
-
-  canvas.addEventListener("mousemove", (e) => {
-    const next = catIndexAt(e.clientX, e.clientY);
-    if (next !== hoverIndex) {
-      hoverIndex = next;
-      canvas.classList.toggle("selectable", hoverIndex >= 0);
-      reportHover();
-      render(Date.now());
-    }
-  });
-
-  canvas.addEventListener("mouseleave", () => {
-    hoverIndex = -1;
-    reportHover();
-    render(Date.now());
-  });
 
   /* ---------- aspect-fit resize so scene fills the stage and stays centered ---------- */
 
@@ -546,24 +514,7 @@
         ctx.fillText(breed.name, (x + 9) * SCALE, 73 * SCALE);
         ctx.restore();
       }
-
-      // Hover highlight
-      if (i === hoverIndex) {
-        ctx.globalAlpha = 0.45 + 0.25 * Math.sin(t / 200);
-        glow(x + 9, 60, 12, "#d4a05f", 0.25);
-        rect(x + 2, 58, 16, 2, "#d4a05f");
-        ctx.globalAlpha = 1;
-      }
     });
-
-    // Hint pointer
-    const pulse = 0.5 + 0.5 * Math.sin(t / 500);
-    ctx.globalAlpha = 0.4 + 0.3 * pulse;
-    px(64, 34, "#d4a05f");
-    px(64, 35, "#d4a05f");
-    px(63, 35, "#d4a05f");
-    px(65, 35, "#d4a05f");
-    ctx.globalAlpha = 1;
   }
 
   function scenePiano(t) {

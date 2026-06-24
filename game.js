@@ -381,7 +381,6 @@ function startWithBreed(breed) {
 }
 
 function returnToBreedSelect() {
-  if (dom.canvas) dom.canvas.classList.add("selectable");
   state.cat = null;
   state.trust = 10;
   state.scene = "breed_select";
@@ -679,9 +678,6 @@ function goToScene(sceneName) {
     window.onBreedHover = null;
   }
   state.scene = sceneName;
-  if (dom.canvas) {
-    dom.canvas.classList.toggle("selectable", sceneName === "breed_select");
-  }
   // eslint-disable-next-line no-console
   console.log("[strayed] scene:", sceneName, "breed:", state.cat ? state.cat.breed.name : "none");
   if (SCENES[sceneName]) {
@@ -705,6 +701,10 @@ const SCENES = {
     dom.catInfo.classList.add("hidden");
     dom.choices.innerHTML = "";
     hideAdvanceIndicator();
+    if (dom.breedOverlay) {
+      dom.breedOverlay.classList.remove("hidden");
+      dom.breedOverlay.classList.add("active");
+    }
 
     setSpeaker("NARRATION");
     const unlocked = new Set(state.unlockedBreeds);
@@ -716,8 +716,6 @@ const SCENES = {
 
     if (dom.breedOverlay) {
       dom.breedOverlay.innerHTML = "";
-      dom.breedOverlay.classList.remove("hidden");
-      dom.breedOverlay.classList.add("active");
 
       // Cat sprite positions in the 128x80 scene
       const positions = [5, 30, 55, 80, 105];
