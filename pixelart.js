@@ -19,6 +19,29 @@
 
   let currentScene = "start";
   let currentState = { cat: null };
+  let hoverIndex = -1;
+
+  function catIndexAt(clientX, clientY) {
+    if (currentScene !== "breed_select") return -1;
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) / rect.width * 128;
+    if (x < 5 || x > 123) return -1;
+    return Math.min(4, Math.max(0, Math.floor((x - 5) / 25)));
+  }
+
+  canvas.addEventListener("mousemove", (e) => {
+    const next = catIndexAt(e.clientX, e.clientY);
+    if (next !== hoverIndex) {
+      hoverIndex = next;
+      canvas.classList.toggle("selectable", hoverIndex >= 0);
+      render(Date.now());
+    }
+  });
+
+  canvas.addEventListener("mouseleave", () => {
+    hoverIndex = -1;
+    render(Date.now());
+  });
 
   /* ---------- aspect-fit resize so scene fills the stage and stays centered ---------- */
 
@@ -75,7 +98,7 @@
     default:      { fur:"#a89888", points:"#7a6a5a", eyes:"#d4a05f", nose:"#d8a0a8", belly:"#b8a898", stripes:null,  p1:null,      p2:null      }
   };
 
-  /* ---------- draw a cute sitting cat at (ox, oy) ---------- */
+  /* ---------- Slugcat-inspired breed-specific cats ---------- */
 
   function drawCat(ox, oy, breedName) {
     const p = PAL[breedName] || PAL.default;
@@ -83,92 +106,193 @@
     const s = p.stripes, o = p.p1, b = p.p2;
     const dk = "#1a1515";
 
-    // Ears (rounded, wider set)
-    rect(ox + 4, oy + 0, 3, 4, pt);
-    rect(ox + 5, oy + 1, 1, 3, f);
-    rect(ox + 13, oy + 0, 3, 4, pt);
-    rect(ox + 14, oy + 1, 1, 3, f);
+    const breed = breedName || "default";
+    const isMaineCoon = breed === "Maine Coon";
+    const isSphynx = breed === "Sphynx";
+    const isSiamese = breed === "Siamese";
+    const isRagdoll = breed === "Ragdoll";
+    const isCalico = breed === "Calico";
 
-    // Head (wide round face, soft cheeks)
-    rect(ox + 4, oy + 3, 12, 6, f);
-    rect(ox + 3, oy + 4, 14, 5, f);
-    rect(ox + 2, oy + 6, 16, 4, f);
-    rect(ox + 4, oy + 9, 12, 2, pt); // muzzle mask
-    px(ox + 3, oy + 8, f);
-    px(ox + 16, oy + 8, f);
+    // Body proportions by breed
+    const bodyW = isMaineCoon ? 14 : isSphynx ? 9 : 12;
+    const bodyH = isMaineCoon ? 10 : 8;
+    const bodyX = ox + Math.floor((18 - bodyW) / 2);
+    const bodyY = oy + 7;
 
-    // Eyes (large, low)
-    rect(ox + 6, oy + 5, 3, 4, e);
-    rect(ox + 11, oy + 5, 3, 4, e);
-    rect(ox + 7, oy + 6, 1, 2, dk);
-    rect(ox + 12, oy + 6, 1, 2, dk);
+    // Ears
+    if (isSphynx) {
+      // Large bat-like ears
+      rect(ox + 4, oy + 0, 3, 6, pt);
+      rect(ox + 11, oy + 0, 3, 6, pt);
+      rect(ox + 5, oy + 1, 1, 4, f);
+      rect(ox + 12, oy + 1, 1, 4, f);
+    } else if (isMaineCoon) {
+      // Tufted ears
+      rect(ox + 4, oy - 1, 3, 5, pt);
+      rect(ox + 11, oy - 1, 3, 5, pt);
+      rect(ox + 5, oy + 1, 1, 3, f);
+      rect(ox + 12, oy + 1, 1, 3, f);
+      px(ox + 4, oy - 1, pt);
+      px(ox + 13, oy - 1, pt);
+    } else {
+      // Small rounded ears
+      rect(ox + 5, oy + 0, 3, 4, pt);
+      rect(ox + 10, oy + 0, 3, 4, pt);
+      rect(ox + 6, oy + 1, 1, 3, f);
+      rect(ox + 11, oy + 1, 1, 3, f);
+    }
 
-    // Nose + mouth
-    rect(ox + 9, oy + 8, 2, 1, n);
-    px(ox + 9, oy + 9, pt);
-    px(ox + 10, oy + 9, pt);
+    // Head (big soft slugcat face)
+    const headW = isMaineCoon ? 14 : 12;
+    const headX = ox + Math.floor((18 - headW) / 2);
+    rect(headX, oy + 4, headW, 6, f);
+    rect(headX - 1, oy + 6, headW + 2, 4, f);
+    if (!isSphynx) {
+      // soft cheek tufts
+      px(headX - 1, oy + 7, f);
+      px(headX + headW, oy + 7, f);
+    }
 
-    // Whiskers
-    rect(ox + 1, oy + 8, 2, 1, "#7a6a5a");
-    rect(ox + 1, oy + 9, 2, 1, "#7a6a5a");
-    rect(ox + 17, oy + 8, 2, 1, "#7a6a5a");
-    rect(ox + 17, oy + 9, 2, 1, "#7a6a5a");
+    // Sphynx wrinkles
+    if (isSphynx) {
+      rect(headX + 4, oy + 5, 4, 1, pt);
+      rect(headX + 3, oy + 7, 6, 1, pt);
+    }
 
-    // Neck (small visible connector)
-    rect(ox + 7, oy + 10, 6, 2, f);
+    // Point mask (Siamese/Ragdoll) — darker face
+    if (isSiamese || isRagdoll) {
+      rect(headX + 2, oy + 6, headW - 4, 4, pt);
+      px(headX + 1, oy + 8, pt);
+      px(headX + headW - 2, oy + 8, pt);
+    }
 
-    // Body (tapered oval, not a rectangle)
-    rect(ox + 5, oy + 11, 10, 3, f);   // narrow shoulders
-    rect(ox + 4, oy + 13, 12, 4, f);   // widest midsection
-    rect(ox + 5, oy + 17, 10, 2, f);   // taper to hips
-    rect(ox + 7, oy + 13, 6, 4, bl);   // rounded belly
+    // Eyes (large, round, low on face)
+    const eyeY = isSphynx ? oy + 6 : oy + 7;
+    const eyeW = isSphynx ? 2 : 3;
+    rect(ox + 6, eyeY, eyeW, 3, e);
+    rect(ox + 11, eyeY, eyeW, 3, e);
+    px(ox + 7, eyeY + 1, dk);
+    px(ox + 12, eyeY + 1, dk);
 
-    // Stripes (tabby) — curved on back
+    // Nose + tiny mouth
+    rect(ox + 8, oy + 10, 2, 1, n);
+    px(ox + 9, oy + 11, pt);
+
+    // Whiskers (only on fuzzy breeds)
+    if (!isSphynx) {
+      rect(ox + 2, oy + 9, 2, 1, "#7a6a5a");
+      rect(ox + 14, oy + 9, 2, 1, "#7a6a5a");
+    }
+
+    // Body (pear / slugcat blob)
+    rect(bodyX, bodyY, bodyW, 3, f);
+    rect(bodyX - 1, bodyY + 2, bodyW + 2, 3, f);
+    rect(bodyX - 1, bodyY + 4, bodyW + 2, 3, f);
+    rect(bodyX, bodyY + 6, bodyW, 2, f);
+
+    // Belly patch
+    rect(bodyX + 3, bodyY + 3, bodyW - 6, 4, bl);
+
+    // Stripes (Maine Coon)
     if (s) {
-      rect(ox + 6, oy + 12, 2, 1, s);
-      rect(ox + 10, oy + 12, 2, 1, s);
-      rect(ox + 5, oy + 14, 3, 1, s);
-      rect(ox + 10, oy + 14, 3, 1, s);
-      rect(ox + 7, oy + 16, 6, 1, s);
+      rect(bodyX + 1, bodyY + 1, bodyW - 2, 1, s);
+      rect(bodyX, bodyY + 3, 3, 1, s);
+      rect(bodyX + bodyW - 3, bodyY + 3, 3, 1, s);
+      rect(bodyX + 2, bodyY + 5, bodyW - 4, 1, s);
     }
 
     // Calico patches
-    if (o) rect(ox + 4, oy + 12, 3, 3, o);
-    if (b) rect(ox + 11, oy + 13, 4, 4, b);
+    if (o) rect(bodyX + 1, bodyY + 1, 3, 3, o);
+    if (b) rect(bodyX + bodyW - 4, bodyY + 2, 3, 3, b);
 
-    // Paws (rounded, close together)
-    rect(ox + 6, oy + 17, 3, 2, pt);
-    rect(ox + 11, oy + 17, 3, 2, pt);
+    // Paws (tiny nubs)
+    const pawY = bodyY + bodyH - 1;
+    rect(ox + 6, pawY, 2, 2, pt);
+    rect(ox + 10, pawY, 2, 2, pt);
 
-    // Tail (curled around body)
-    rect(ox + 15, oy + 14, 2, 5, f);
-    rect(ox + 16, oy + 12, 2, 3, f);
-    rect(ox + 17, oy + 11, 1, 2, pt);
+    // Tail (breed-specific, curling out to the right)
+    if (isMaineCoon) {
+      // Bushy tail
+      rect(bodyX + bodyW - 2, bodyY + 3, 3, 7, f);
+      rect(bodyX + bodyW + 1, bodyY + 6, 3, 5, f);
+      rect(bodyX + bodyW + 3, bodyY + 9, 2, 3, f);
+      if (s) rect(bodyX + bodyW, bodyY + 5, 3, 1, s);
+    } else if (isSiamese || isSphynx) {
+      // Thin whip tail
+      rect(bodyX + bodyW - 1, bodyY + 6, 1, 5, pt);
+      rect(bodyX + bodyW, bodyY + 10, 1, 3, pt);
+      rect(bodyX + bodyW + 1, bodyY + 12, 1, 2, pt);
+    } else {
+      // Medium curved tail
+      rect(bodyX + bodyW - 1, bodyY + 5, 2, 5, f);
+      rect(bodyX + bodyW + 1, bodyY + 8, 2, 3, f);
+      rect(bodyX + bodyW + 2, bodyY + 10, 1, 2, pt);
+    }
   }
 
-  /* ---------- cat silhouette (for window scenes) ---------- */
+  /* ---------- breed-specific silhouettes ---------- */
 
-  function drawCatSilhouette(ox, oy) {
+  function drawCatSilhouette(ox, oy, breedName) {
     const c = "#0a0a14";
-    rect(ox + 4, oy + 0, 3, 4, c);
-    rect(ox + 13, oy + 0, 3, 4, c);
-    rect(ox + 4, oy + 3, 12, 6, c);
-    rect(ox + 3, oy + 4, 14, 5, c);
-    rect(ox + 2, oy + 6, 16, 4, c);
-    rect(ox + 4, oy + 9, 12, 2, c);
-    px(ox + 3, oy + 8, c);
-    px(ox + 16, oy + 8, c);
-    rect(ox + 7, oy + 10, 6, 2, c);
-    rect(ox + 5, oy + 11, 10, 3, c);
-    rect(ox + 4, oy + 13, 12, 4, c);
-    rect(ox + 5, oy + 17, 10, 2, c);
-    rect(ox + 6, oy + 17, 3, 2, c);
-    rect(ox + 11, oy + 17, 3, 2, c);
-    rect(ox + 15, oy + 14, 2, 5, c);
-    rect(ox + 16, oy + 12, 2, 3, c);
+    const breed = breedName || "default";
+    const isMaineCoon = breed === "Maine Coon";
+    const isSphynx = breed === "Sphynx";
+    const isSiamese = breed === "Siamese";
+
+    const bodyW = isMaineCoon ? 14 : isSphynx ? 9 : 12;
+    const bodyH = isMaineCoon ? 10 : 8;
+    const bodyX = ox + Math.floor((18 - bodyW) / 2);
+    const bodyY = oy + 7;
+
+    if (isSphynx) {
+      rect(ox + 4, oy + 0, 3, 6, c);
+      rect(ox + 11, oy + 0, 3, 6, c);
+    } else if (isMaineCoon) {
+      rect(ox + 4, oy - 1, 3, 5, c);
+      rect(ox + 11, oy - 1, 3, 5, c);
+      px(ox + 4, oy - 1, c);
+      px(ox + 13, oy - 1, c);
+    } else {
+      rect(ox + 5, oy + 0, 3, 4, c);
+      rect(ox + 10, oy + 0, 3, 4, c);
+    }
+
+    const headW = isMaineCoon ? 14 : 12;
+    const headX = ox + Math.floor((18 - headW) / 2);
+    rect(headX, oy + 4, headW, 6, c);
+    rect(headX - 1, oy + 6, headW + 2, 4, c);
+    if (isSphynx) {
+      rect(headX + 4, oy + 5, 4, 1, c);
+      rect(headX + 3, oy + 7, 6, 1, c);
+    }
+
+    rect(bodyX, bodyY, bodyW, 3, c);
+    rect(bodyX - 1, bodyY + 2, bodyW + 2, 3, c);
+    rect(bodyX - 1, bodyY + 4, bodyW + 2, 3, c);
+    rect(bodyX, bodyY + 6, bodyW, 2, c);
+
+    const pawY = bodyY + bodyH - 1;
+    rect(ox + 6, pawY, 2, 2, c);
+    rect(ox + 10, pawY, 2, 2, c);
+
+    if (isMaineCoon) {
+      rect(bodyX + bodyW - 2, bodyY + 3, 3, 6, c);
+      rect(bodyX + bodyW - 1, bodyY + 1, 3, 4, c);
+      rect(bodyX + bodyW, bodyY - 1, 2, 3, c);
+    } else if (isSiamese || isSphynx) {
+      rect(bodyX + bodyW - 1, bodyY + 4, 1, 5, c);
+      rect(bodyX + bodyW, bodyY + 2, 1, 4, c);
+      rect(bodyX + bodyW + 1, bodyY + 1, 1, 2, c);
+    } else {
+      rect(bodyX + bodyW - 2, bodyY + 4, 2, 5, c);
+      rect(bodyX + bodyW - 1, bodyY + 2, 2, 3, c);
+      rect(bodyX + bodyW, bodyY + 1, 1, 2, c);
+    }
+
     // glowing eyes
-    rect(ox + 7, oy + 6, 1, 2, "#8abfdf");
-    rect(ox + 12, oy + 6, 1, 2, "#8abfdf");
+    const eyeY = isSphynx ? oy + 6 : oy + 7;
+    rect(ox + 7, eyeY + 1, 1, 1, "#8abfdf");
+    rect(ox + 12, eyeY + 1, 1, 1, "#8abfdf");
   }
 
   /* ---------- reusable scene elements ---------- */
@@ -268,7 +392,7 @@
 
     // Cat — silhouette or full color
     if (silhouette) {
-      drawCatSilhouette(56, 50);
+      drawCatSilhouette(56, 50, currentState.cat ? currentState.cat.breed.name : "default");
     } else {
       drawCat(56, 50, currentState.cat ? currentState.cat.breed.name : "default");
     }
@@ -342,11 +466,19 @@
       if (unlocked.has(breed.name)) {
         drawCat(x, 38, breed.name);
       } else {
-        drawCatSilhouette(x, 38);
+        drawCatSilhouette(x, 38, breed.name);
+      }
+
+      // Hover highlight
+      if (i === hoverIndex) {
+        ctx.globalAlpha = 0.45 + 0.25 * Math.sin(t / 200);
+        glow(x + 9, 60, 12, "#d4a05f", 0.25);
+        rect(x + 2, 58, 16, 2, "#d4a05f");
+        ctx.globalAlpha = 1;
       }
     });
 
-    // Subtle pointer on the center cat
+    // Hint pointer
     const pulse = 0.5 + 0.5 * Math.sin(t / 500);
     ctx.globalAlpha = 0.4 + 0.3 * pulse;
     px(64, 34, "#d4a05f");
@@ -469,7 +601,7 @@
     glow(118, 70, 20, "#d4a05f", 0.05);
 
     // Cat silhouette on sill
-    drawCatSilhouette(54, 38);
+    drawCatSilhouette(54, 38, currentState.cat ? currentState.cat.breed.name : "default");
   }
 
   function sceneEnding(t) {

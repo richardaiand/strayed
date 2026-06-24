@@ -511,17 +511,16 @@ const SCENES = {
     dom.toggleLog.classList.add("hidden");
     dom.log.classList.add("hidden");
     dom.catInfo.classList.add("hidden");
+    dom.choices.innerHTML = "";
     hideAdvanceIndicator();
     if (dom.canvas) dom.canvas.classList.add("selectable");
 
     setSpeaker("NARRATION");
-    dom.passage.textContent = "Five shapes in the apartment. One of them is going to rearrange your life.";
-
-    const buttons = BREEDS.map((breed) => ({
-      label: state.unlockedBreeds.includes(breed.name) ? `${breed.emoji} ${breed.name}` : `◼ ${breed.name}`,
-      action: () => startWithBreed(breed)
-    }));
-    showChoices(buttons);
+    const unlockedCount = state.unlockedBreeds.length;
+    const prompt = unlockedCount === 0
+      ? "Five shapes in the apartment. Click one to choose your cat."
+      : `Five shapes in the apartment. ${unlockedCount === 5 ? "All" : unlockedCount} remembered. Click one to choose again.`;
+    dom.passage.textContent = prompt;
   },
 
   act1_intro() {
